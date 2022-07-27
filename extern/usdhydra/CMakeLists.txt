@@ -23,6 +23,8 @@ set(INC
   ../../source/blender/io/usd
   ../../source/blender/io/common
   ../../source/blender/io/usd/intern
+  ../../source/blender/editors/space_outliner
+  ../../source/blender/windowmanager
   ${CMAKE_BINARY_DIR}/source/blender/makesrna/intern
 )
 
@@ -56,6 +58,9 @@ set(SRC
 
   view_settings.h
   view_settings.cpp
+
+  usd_collection.h
+  usd_collection.cpp
 
   usdImagingLite/engine.cpp
   usdImagingLite/engine.h

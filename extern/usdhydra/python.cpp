@@ -13,6 +13,7 @@
 #include "usd_node.h"
 #include "session.h"
 #include "utils.h"
+#include "usd_collection.h"
 
 
 namespace usdhydra {
@@ -65,6 +66,7 @@ PyObject *USDHydra_initPython(void)
   usdhydra::addPythonSubmodule_usd_node(mod);
   usdhydra::addPythonSubmodule_session(mod);
   usdhydra::addPythonSubmodule_utils(mod);
+  usdhydra::addPythonSubmodule_usd_collection(mod);
 
   return mod;
 }
