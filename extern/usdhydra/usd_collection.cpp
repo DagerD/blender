@@ -3,10 +3,16 @@
 
 #pragma once
 
+#include <pxr/usd/usd/primRange.h>
+#include <algorithm>
+#include <string.h>
+
 #include "BKE_main.h"
 #include "BKE_context.h"
 #include "BKE_collection.h"
 #include "BKE_layer.h"
+#include "BKE_idprop.h"
+#include "BKE_object.h"
 #include "BLI_listbase.h"
 #include "DNA_collection_types.h"
 #include "DEG_depsgraph.h"
@@ -17,6 +23,8 @@
 
 #include "usd_collection.h"
 #include "stage.h"
+#include "utils.h"
+#include "session.h"
 
 using namespace std;
 using namespace pxr;
@@ -30,11 +38,9 @@ void update(BL::Context b_context, int stageId) {
 
 static PyObject *update_func(PyObject * /*self*/, PyObject *args)
 {
-  PyObject *pycontext;
+  PyObject *pycontext, *pysession;
 
-  int stageId = 0;
-
-  if (!PyArg_ParseTuple(args, "Oi", &pycontext, &stageId)) {
+  if (!PyArg_ParseTuple(args, "OO", &pycontext, &pysession)) {
     Py_RETURN_NONE;
   }
 
@@ -44,7 +50,11 @@ static PyObject *update_func(PyObject * /*self*/, PyObject *args)
 
   const string COLLECTION_NAME = "USD NodeTree";
 
-  UsdStageRefPtr stage = stageCache->Find(UsdStageCache::Id::FromLongInt(stageId));
+  BlenderSession *session = (BlenderSession *)PyLong_AsVoidPtr(pysession);
+
+  if (!session->stage) {
+    Py_RETURN_NONE;
+  }
 
   bContext *C = (bContext *)b_context.ptr.data;
   Main *bmain = CTX_data_main(C);
@@ -57,12 +67,10 @@ static PyObject *update_func(PyObject * /*self*/, PyObject *args)
   
   for (CollectionChild *collection = (CollectionChild *)scene_collection->children.first; collection != NULL;
          collection = collection->next) {
-
     if (BKE_collection_ui_name_get(collection->collection) == COLLECTION_NAME) {
       usd_collection = collection->collection;
       break;
     }
-
   }
   
   if (!usd_collection) {
@@ -74,12 +82,194 @@ static PyObject *update_func(PyObject * /*self*/, PyObject *args)
       outliner_cleanup_tree(space_outliner);
     }
 
-    WM_main_add_notifier(NC_SCENE | ND_LAYER, nullptr);
+    const char *PROP_USD_SDF_PATH_NAME = "USD SDF path";
+    const int PROP_USD_SDF_PATH_MAX_LEN = 255;
+
+    map<SdfPath, Object*> objects;
+
+    LISTBASE_FOREACH (CollectionObject *, coll_ob, &usd_collection->gobject) {
+      Object *ob = coll_ob->ob;
+      ID id = ob->id;
+
+      IDProperty *idprop = id.properties;
+      if (idprop) {
+        IDPropertyData idpropdata = idprop->data;
+        // eIDPropertyType proptype = (eIDPropertyType)idprop->type;
+      
+        IDProperty *obj_prop_usd_sdf_path = nullptr;
+
+        LISTBASE_FOREACH (IDProperty *, prop, &idprop->data.group) {
+          if (!strcmp(prop->name, PROP_USD_SDF_PATH_NAME)) {
+            obj_prop_usd_sdf_path = prop;
+            objects.insert(pair<SdfPath, Object*>(SdfPath((char *)prop->data.pointer), ob));
+            break;
+          }  
+        }
+
+        if (!obj_prop_usd_sdf_path) {
+          obj_prop_usd_sdf_path = IDP_NewString("", PROP_USD_SDF_PATH_NAME, PROP_USD_SDF_PATH_MAX_LEN);
+          idprop->len++;
+          BLI_addtail(&idprop->data.group, obj_prop_usd_sdf_path);
+        }
+
+      
+      }
+      else {
+
+      }
+    }
+
+    set<SdfPath> obj_paths, prim_paths, paths_to_remove, paths_to_add, path_to_update;
+
+    for(map<SdfPath, Object*>::iterator it = objects.begin(); it != objects.end(); ++it) {
+      obj_paths.insert(it->first);
+    }
+
+    for (UsdPrim prim : session->stage->TraverseAll()) {
+      if (!ignore_prim(prim)) {
+        prim_paths.insert(prim.GetPath());
+        // printf("%s %s\r\n", prim.GetPath().GetAsString().c_str(), prim.GetTypeName().GetString().c_str());
+      }
+    }
+
+    set_difference(obj_paths.begin(), obj_paths.end(),
+                    prim_paths.begin(), prim_paths.end(),
+                    inserter(paths_to_remove, paths_to_remove.end()));
+
+    set_difference(prim_paths.begin(), prim_paths.end(),
+                    obj_paths.begin(), obj_paths.end(),
+                    inserter(paths_to_add, paths_to_add.end()));
+
+    set_intersection(obj_paths.begin(), obj_paths.end(),
+                      prim_paths.begin(), prim_paths.end(),
+                      inserter(path_to_update, path_to_update.begin()));
+
+    for (SdfPath path : paths_to_remove) {
+      Object *obj = objects.find(path)->second;
+      objects.erase(path);
+      BKE_collection_object_remove(bmain, usd_collection, obj, false);
+      string as = path.GetAsString();
+      int as1 = 123;
+    }
+
+    for (SdfPath path : path_to_update) {
+      string as = path.GetAsString();
+      int as2 = 123;
+    }
+
+    for (SdfPath path : paths_to_add) {
+      SdfPath parent_path = path.GetParentPath();
+      Object *parent_obj = nullptr;
+
+      if (parent_path.GetAsString() != "/") {
+        auto it = objects.find(parent_path);
+        if (it != objects.end()) {
+          parent_obj =  it->second;
+        }
+      }
+      UsdPrim obj_prim = session->stage->GetPrimAtPath(path);
+
+      Object *obj = BKE_object_add_only_object(bmain, OB_EMPTY, obj_prim.GetName().GetString().c_str());
+      
+      obj->parent = parent_obj;
+       
+      if (SUPPORTED_PRIM_TYPES.count(obj_prim.GetTypeName()) == 0) {
+        obj->visibility_flag |= 1;
+      }
+
+      BKE_collection_object_add(bmain, usd_collection, obj);
+      /*if (!BKE_collection_has_object(usd_collection, obj)) {
+        BKE_collection_object_add(bmain, usd_collection, obj);
+      }*/
+      objects.insert(pair<SdfPath, Object*>(path, obj));
+    }
   }
 
+  //const char *PROP_USD_SDF_PATH_NAME = "USD SDF path";
+  //const int PROP_USD_SDF_PATH_MAX_LEN = 255;
 
+  //map<SdfPath, Object*> objects;
 
+  //LISTBASE_FOREACH (CollectionObject *, coll_ob, &usd_collection->gobject) {
+  //  Object *ob = coll_ob->ob;
+  //  ID id = ob->id;
 
+  //  IDProperty *idprop = id.properties;
+  //  if (idprop) {
+  //    IDPropertyData idpropdata = idprop->data;
+  //    // eIDPropertyType proptype = (eIDPropertyType)idprop->type;
+  //    
+  //    IDProperty *obj_prop_usd_sdf_path = nullptr;
+
+  //    LISTBASE_FOREACH (IDProperty *, prop, &idprop->data.group) {
+  //      if (!strcmp(prop->name, PROP_USD_SDF_PATH_NAME)) {
+  //        obj_prop_usd_sdf_path = prop;
+  //        objects.insert(pair<SdfPath, Object*>(SdfPath((char *)prop->data.pointer), ob));
+  //        break;
+  //      }  
+  //    }
+
+  //    if (!obj_prop_usd_sdf_path) {
+  //      obj_prop_usd_sdf_path = IDP_NewString("", PROP_USD_SDF_PATH_NAME, PROP_USD_SDF_PATH_MAX_LEN);
+  //      idprop->len++;
+  //      BLI_addtail(&idprop->data.group, obj_prop_usd_sdf_path);
+  //    }
+
+  //    
+  //  }
+  //  else {
+
+  //  }
+  //}
+
+  //set<SdfPath> obj_paths, prim_paths, paths_to_remove, paths_to_add, path_to_update;
+
+  //for(map<SdfPath, Object*>::iterator it = objects.begin(); it != objects.end(); ++it) {
+  //  obj_paths.insert(it->first);
+  //}
+
+  //for (UsdPrim prim : session->stage->TraverseAll()) {
+  //  if (!ignore_prim(prim)) {
+  //    prim_paths.insert(prim.GetPath());
+  //    // printf("%s %s\r\n", prim.GetPath().GetAsString().c_str(), prim.GetTypeName().GetString().c_str());
+  //  }
+  //}
+
+  //set_difference(obj_paths.begin(), obj_paths.end(),
+  //                prim_paths.begin(), prim_paths.end(),
+  //                inserter(paths_to_remove, paths_to_remove.end()));
+
+  //set_difference(prim_paths.begin(), prim_paths.end(),
+  //                obj_paths.begin(), obj_paths.end(),
+  //                inserter(paths_to_add, paths_to_add.end()));
+
+  //set_intersection(obj_paths.begin(), obj_paths.end(),
+  //                  prim_paths.begin(), prim_paths.end(),
+  //                  inserter(path_to_update, path_to_update.begin()));
+
+  //for (SdfPath path : paths_to_remove) {
+  //  Object *obj = objects.find(path)->second;
+  //  objects.erase(path);
+  //  BKE_collection_object_remove(bmain, usd_collection, obj, false);
+  //  string as = path.GetAsString();
+  //  int as1 = 123;
+  //}
+
+  //for (SdfPath path : path_to_update) {
+  //  string as = path.GetAsString();
+  //  int as2 = 123;
+  //}
+
+  //for (SdfPath path : paths_to_add) {
+  //  Object *obj = BKE_object_add_only_object(bmain, OB_EMPTY, path.GetAsString().c_str());
+  //  if (!BKE_collection_has_object(usd_collection, obj)) {
+  //    BKE_collection_object_add(bmain, usd_collection, obj);
+  //  }
+  //  string as = path.GetAsString();
+  //  int as3 = 123;
+  //}
+
+  WM_main_add_notifier(NC_SCENE | ND_LAYER, nullptr);
   Py_RETURN_NONE;
 }
 

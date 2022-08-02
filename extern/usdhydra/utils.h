@@ -22,7 +22,10 @@ filesystem::path get_temp_dir(void);
 filesystem::path get_temp_pid_dir(void);
 string get_temp_file(string suffix, string name = "", bool is_rand = false);
 
-const set<TfToken> SUPPORTED_PRIM_TYPES{TfToken("Xform"), TfToken("SkelRoot"), TfToken("Scope")};
+const set<TfToken> SUPPORTED_PRIM_TYPES{TfToken("Xform"),
+                                        TfToken("SkelRoot"),
+                                        //TfToken("Scope")
+                                       };
 
 const set<TfToken> SUPPORTED_GEOM_TYPES{TfToken("Mesh"), TfToken("Camera")};
 

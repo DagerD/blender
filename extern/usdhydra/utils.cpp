@@ -75,21 +75,13 @@ bool ignore_prim(UsdPrim usd_prim)
 {
   TfToken usd_prim_type = usd_prim.GetTypeName();
 
-  if (usd_prim_type.IsEmpty()) {
-    return false;
-  }
+  //if (usd_prim_type.IsEmpty()) {
+  //  return false;
+  //}
   
   return !((SUPPORTED_PRIM_TYPES.count(usd_prim_type) > 0) || 
            (SUPPORTED_GEOM_TYPES.count(usd_prim_type) > 0) ||
             boost::algorithm::ends_with(usd_prim_type.GetString(), "Light"));
-}
-
-UsdPrim traverse_stage(UsdStageRefPtr stage, bool (*func)(UsdPrim))
-{
-  auto traverse = [](UsdPrim usd_prim)
-  {
-    for (child)
-  }
 }
 
 static PyObject *get_temp_file_func(PyObject * /*self*/, PyObject *args)
