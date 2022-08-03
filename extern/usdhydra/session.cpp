@@ -3,9 +3,9 @@
 
 #include <GL/glew.h>
 
+#include <pxr/pxr.h>
 #include <pxr/usd/usd/stage.h>
 #include <pxr/base/gf/camera.h>
-#include <pxr/base/plug/registry.h>
 #include <pxr/imaging/glf/drawTarget.h>
 #include <pxr/usd/usdGeom/camera.h>
 #include <pxr/usdImaging/usdImagingGL/engine.h>
@@ -155,15 +155,13 @@ void BlenderSession::view_draw(BL::Depsgraph &b_depsgraph, BL::Context &b_contex
 
 void BlenderSession::view_update(BL::Depsgraph &b_depsgraph, BL::Context &b_context)
 {
-  if (imagingGLEngine && imagingGLEngine->IsPauseRendererSupported()) {
-    imagingGLEngine->PauseRenderer();
+  if (!imagingGLEngine) {
+    imagingGLEngine = std::make_unique<pxr::UsdImagingGLEngine>();
+    imagingGLEngine->SetRendererPlugin(TfToken("HdRprPlugin"));
   }
 
-  imagingGLEngine = std::make_unique<pxr::UsdImagingGLEngine>();
-
-
-  if (!imagingGLEngine->SetRendererPlugin(TfToken("HdStormRendererPlugin"))) {
-    return;
+  if (imagingGLEngine->IsPauseRendererSupported()) {
+    imagingGLEngine->PauseRenderer();
   }
 
   sync(b_depsgraph, b_context);

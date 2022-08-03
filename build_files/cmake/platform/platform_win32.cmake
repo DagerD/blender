@@ -839,10 +839,11 @@ endif()
 if(WITH_USD)
   windows_find_package(USD)
   if(NOT USD_FOUND)
-    set(USD_INCLUDE_DIRS ${LIBDIR}/usd/include)
-    set(USD_RELEASE_LIB ${LIBDIR}/usd/lib/usd_usd_m.lib)
-    set(USD_DEBUG_LIB ${LIBDIR}/usd/lib/usd_usd_m_d.lib)
     set(USD_LIBRARY_DIR ${LIBDIR}/usd/lib)
+    set(USD_INCLUDE_DIRS ${LIBDIR}/usd/include)
+    set(USD_RELEASE_LIB ${USD_LIBRARY_DIR}/usd_usd_ms.lib)
+    set(USD_DEBUG_LIB ${USD_LIBRARY_DIR}/usd_usd_ms_d.lib)
+    set(USD_PYTHON_DIR ${USD_LIBRARY_DIR}/python)
     set(USD_PLUGIN_DIR ${LIBDIR}/usd/plugin/usd)
     set(MATERIALX_DIR ${LIBDIR}/MaterialX)
     # Older USD had different filenames, if the new ones are
@@ -857,6 +858,10 @@ if(WITH_USD)
       optimized ${USD_RELEASE_LIB}
     )
   endif()
+
+  set(BOOST_LIBRARIES ${BOOST_LIBRARIES}
+    debug ${USD_LIBRARY_DIR}/boost_python310-${BOOST_DEBUG_POSTFIX}
+    optimized ${USD_LIBRARY_DIR}/boost_python310-${BOOST_POSTFIX})
 endif()
 
 if(WINDOWS_PYTHON_DEBUG)

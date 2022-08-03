@@ -94,10 +94,26 @@ static PyObject *prim_get_info_func(PyObject * /*self*/, PyObject *args)
   return ret;
 }
 
+static PyObject *stage_get_info_func(PyObject * /*self*/, PyObject *args)
+{
+  long stageId;
+  if (!PyArg_ParseTuple(args, "l", &stageId)) {
+    Py_RETURN_NONE;
+  }
+
+  UsdStageRefPtr stage = stageCache->Find(UsdStageCache::Id::FromLongInt(stageId));
+
+  PyObject *ret = PyDict_New();
+  PyDict_SetItemString(ret, "filepath", PyUnicode_FromString(stage->GetRootLayer()->GetResolvedPath().GetPathString().c_str()));
+
+  return ret;
+}
+
 static PyMethodDef methods[] = {
   {"export_to_str", export_to_str_func, METH_VARARGS, ""},
   {"free", free_func, METH_VARARGS, ""},
   {"prim_get_info", prim_get_info_func, METH_VARARGS, ""},
+  {"stage_get_info", stage_get_info_func, METH_VARARGS, ""},
   {NULL, NULL, 0, NULL},
 };
 

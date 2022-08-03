@@ -10,14 +10,13 @@ import shutil
 
 from pathlib import Path
 
-from . import LIBS_DIR, title_str, code_str
+from . import title_str, code_str
 from .image import cache_image_file
 
 from . import logging
 log = logging.Log('utils.mx')
 
-MX_LIBS_FOLDER = "libraries"
-MX_LIBS_DIR = LIBS_DIR / MX_LIBS_FOLDER
+MX_LIBS_DIR = Path(bpy.utils.resource_path('LOCAL')) / "datafiles/MaterialX"
 
 os.environ['MATERIALX_SEARCH_PATH'] = str(MX_LIBS_DIR)
 

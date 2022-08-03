@@ -3,15 +3,25 @@
 
 # <pep8 compliant>
 
+import sys
+import os
+
 import bpy
 import _usdhydra
 
 from .usd_nodes import node_tree
+from . import utils
 from .utils import stages
 
 
 def init():
-    _usdhydra.init()
+    # # internal scene index representation in hydra,
+    # # see https://github.com/PixarAnimationStudios/USD/blob/release/CHANGELOG.md#imaging
+    # os.environ["HD_ENABLE_SCENE_INDEX_EMULATION"] = "0"
+
+    sys.path.append(str(utils.DELEGATES_DIR / 'lib/python'))
+
+    _usdhydra.init(str(utils.DELEGATES_DIR))
 
 
 def exit():
@@ -23,7 +33,7 @@ class USDHydraEngine(bpy.types.RenderEngine):
     bl_label = "USD Hydra Internal"
     bl_info = "USD Hydra rendering plugin"
 
-    bl_use_preview = True
+    bl_use_preview = False              # TODO: material and light previews are temporary disabled
     bl_use_shading_nodes = True
     bl_use_shading_nodes_custom = False
     bl_use_gpu_context = True

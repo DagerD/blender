@@ -7,7 +7,7 @@ import MaterialX as mx
 
 import bpy
 
-from ...utils import title_str, code_str, LIBS_DIR, pass_node_reroute, BLENDER_VERSION
+from ...utils import title_str, code_str, pass_node_reroute, BLENDER_VERSION
 from ...utils import mx as mx_utils
 # from . import log
 
@@ -84,7 +84,7 @@ class MxNode(bpy.types.ShaderNode):
             # loading nodedefs
             doc = mx.createDocument()
             search_path = mx.FileSearchPath(str(mx_utils.MX_LIBS_DIR))
-            mx.readFromXmlFile(doc, str(LIBS_DIR / cls._file_path), searchPath=search_path)
+            mx.readFromXmlFile(doc, str(mx_utils.MX_LIBS_DIR / cls._file_path), searchPath=search_path)
             for val in cls._data_types.values():
                 val['nd'] = doc.getNodeDef(val['nd_name'])
 

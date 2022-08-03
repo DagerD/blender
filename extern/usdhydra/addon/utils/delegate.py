@@ -3,18 +3,15 @@
 
 # <pep8 compliant>
 
-from pathlib import Path
 import zipfile
 from concurrent import futures
 from time import sleep
 
-# from pxr import UsdImagingGL
 
-from . import update_ui, logging
+from . import update_ui, DELEGATES_DIR
 
 
 _render_delegates = {'HdStormRendererPlugin': 'GL', 'HdRprPlugin': 'RPR'}  # remove after implementation UsdImagingGL
-ROOT_UNZIP_FOLDER = Path("d:\\delegates")
 
 
 def get_delegates():
@@ -46,19 +43,13 @@ class Manager:
         update_ui(area_type='PREFERENCES')
 
     def build(self):
-        # unzip file to ROOT_UNZIP_FOLDER / filename
-        filename = Path(self.filepath).stem
-        zip_folder = ROOT_UNZIP_FOLDER / filename
         with zipfile.ZipFile(self.filepath) as z:
-            z.extractall(path=zip_folder)
+            z.extractall(path=DELEGATES_DIR)
 
         # building process
         for i in range(101):
             sleep(0.05)
             self.set_progress(i)
-
-        global _render_delegates
-        _render_delegates[f"Hd{filename}"] = filename
 
         self.set_progress(None)
 

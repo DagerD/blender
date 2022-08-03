@@ -866,23 +866,40 @@ elseif(WIN32)
       )
 
       if(WITH_USD)
+        # USD python bindings
         install(
-          DIRECTORY ${LIBDIR}/MaterialX/python/debug/site-packages
-          DESTINATION ${TARGETDIR_VER}/python/lib
+          DIRECTORY ${USD_PYTHON_DIR}/debug/pxr
+          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
           CONFIGURATIONS Debug
-          PATTERN ".svn" EXCLUDE
           PATTERN "__pycache__" EXCLUDE           # * any cache *
-          PATTERN "*.pyc" EXCLUDE                 # * any cache *
-          PATTERN "*.pyo" EXCLUDE                 # * any cache *
+          PATTERN "*.pyc" EXCLUDE
         )
         install(
-          DIRECTORY ${LIBDIR}/MaterialX/python/release/site-packages
+          DIRECTORY ${USD_PYTHON_DIR}/release/pxr
+          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+          CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
+          PATTERN "__pycache__" EXCLUDE           # * any cache *
+          PATTERN "*.pyc" EXCLUDE
+        )
+
+        # MaterialX python bindings
+        install(
+          DIRECTORY ${MATERIALX_DIR}/python/debug/site-packages
+          DESTINATION ${TARGETDIR_VER}/python/lib
+          CONFIGURATIONS Debug
+          PATTERN "__pycache__" EXCLUDE           # * any cache *
+          PATTERN "*.pyc" EXCLUDE
+          PATTERN "*.lib" EXCLUDE
+          PATTERN "*.pyo" EXCLUDE
+        )
+        install(
+          DIRECTORY ${MATERIALX_DIR}/python/release/site-packages
           DESTINATION ${TARGETDIR_VER}/python/lib
           CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
-          PATTERN ".svn" EXCLUDE
           PATTERN "__pycache__" EXCLUDE           # * any cache *
-          PATTERN "*.pyc" EXCLUDE                 # * any cache *
-          PATTERN "*.pyo" EXCLUDE                 # * any cache *
+          PATTERN "*.pyc" EXCLUDE
+          PATTERN "*.lib" EXCLUDE
+          PATTERN "*.pyo" EXCLUDE
         )
       endif()
 
@@ -1249,6 +1266,20 @@ endif()
 # files are required at runtime.
 if(WITH_USD)
   add_definitions(-DWITH_USD)
+
+  install(
+    FILES ${USD_LIBRARY_DIR}/usd_usd_ms.dll
+          ${USD_LIBRARY_DIR}/boost_python310-vc142-mt-x64-1_78.dll
+    DESTINATION "."
+    CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
+  )
+  install(
+    FILES ${USD_LIBRARY_DIR}/usd_usd_ms_d.dll
+          ${USD_LIBRARY_DIR}/boost_python310-vc142-mt-gd-x64-1_78.dll
+    DESTINATION "."
+    CONFIGURATIONS Debug
+  )
+
   install(DIRECTORY
     ${USD_LIBRARY_DIR}/usd
     ${USD_PLUGIN_DIR}
@@ -1258,6 +1289,11 @@ if(WITH_USD)
   install(DIRECTORY
     ${MATERIALX_DIR}/libraries
     DESTINATION "${TARGETDIR_VER}/datafiles/MaterialX"
+  )
+
+  install(
+    PROGRAMS $<TARGET_FILE:extern_draco>
+    DESTINATION ${TARGETDIR_VER}/python/lib/python${PYTHON_VERSION}/site-packages
   )
 endif()
 
