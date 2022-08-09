@@ -2,7 +2,16 @@
  * Copyright 2011-2022 Blender Foundation */
 
 #include <algorithm>
+
+#include <boost/random.hpp>
 #include <boost/algorithm/string/predicate.hpp>
+
+#include "BLI_listbase.h"
+#include "DNA_collection_types.h"
+#include "BKE_idprop.h"
+#include "RNA_types.h"
+#include "RNA_access.h"
+#include "DEG_depsgraph.h"
 
 #include "utils.h"
 
@@ -14,11 +23,14 @@ string get_random_string(const int len)
       "0123456789"
       "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
       "abcdefghijklmnopqrstuvwxyz";
+  static boost::random::mt19937 rng;
+  static boost::random::uniform_int_distribution<> distribution(0, 63);
+
   string tmp_s;
   tmp_s.reserve(len);
 
   for (int i = 0; i < len; ++i) {
-      tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
+      tmp_s += alphanum[distribution(rng) % (sizeof(alphanum) - 1)];
   }
     
   return tmp_s;
@@ -78,10 +90,64 @@ bool ignore_prim(UsdPrim usd_prim)
   //if (usd_prim_type.IsEmpty()) {
   //  return false;
   //}
-  
-  return !((SUPPORTED_PRIM_TYPES.count(usd_prim_type) > 0) || 
+
+  // Blender exporter returns prim with this name if object is not visible
+  if (!strcmp(usd_prim.GetPath().GetText(), "/_")) {
+    return true;
+  }
+
+  return !((SUPPORTED_PRIM_TYPES.count(usd_prim_type) > 0) ||
            (SUPPORTED_GEOM_TYPES.count(usd_prim_type) > 0) ||
             boost::algorithm::ends_with(usd_prim_type.GetString(), "Light"));
+}
+
+string format_milliseconds(chrono::milliseconds millisecs)
+{
+    bool neg = millisecs < 0ms;
+    if (neg)
+        millisecs = -millisecs;
+    auto m = chrono::duration_cast<chrono::minutes>(millisecs);
+    millisecs -= m;
+    auto s = chrono::duration_cast<chrono::seconds>(millisecs);
+    millisecs -= s;
+    std::string result;
+    if (neg)
+        result.push_back('-');
+    if (m < 10min)
+        result.push_back('0');
+    result += to_string(m/1min);
+    result += ':';
+    if (s < 10s)
+        result.push_back('0');
+    result += to_string(s/1s);
+    result += ':';
+    if (millisecs < 10ms)
+        result.push_back('0');
+    result += to_string(millisecs/1ms/10);
+    return result;
+}
+
+bool add_usd_sdf_path_prop_to_object(Object* object, const char *value)
+{
+  ID id = object->id;
+  IDProperty *idprop = IDP_GetProperties(&id, true);
+  PointerRNA idptr;
+  RNA_id_pointer_create(&id, &idptr);
+
+  //IDPropertyData idpropdata = idprop->data;
+  // eIDPropertyType proptype = (eIDPropertyType)idprop->type;
+  
+  IDProperty *obj_prop_usd_sdf_path = IDP_NewString(value, PROP_USD_SDF_PATH_NAME, PROP_USD_SDF_PATH_MAX_LEN);
+
+  bool is_prop_added = IDP_AddToGroup(idprop, obj_prop_usd_sdf_path);
+
+  object->id = id;
+
+  if (is_prop_added) {
+    DEG_id_tag_update(&id, ID_RECALC_ALL);
+  };
+
+  return is_prop_added;
 }
 
 static PyObject *get_temp_file_func(PyObject * /*self*/, PyObject *args)

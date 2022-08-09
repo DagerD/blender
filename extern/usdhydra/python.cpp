@@ -25,30 +25,28 @@ namespace usdhydra {
 
 static PyObject *init_func(PyObject * /*self*/, PyObject *args)
 {
+  static std::string defaultPath = getenv("PATH");
+
   char *delegates_dir;
   if (!PyArg_ParseTuple(args, "s", &delegates_dir)) {
     Py_RETURN_NONE;
   }
 
-  LOG(INFO) << "init_func";
-  blender::io::usd::ensure_usd_plugin_path_registered();
-
-  pxr::PlugRegistry &registry = pxr::PlugRegistry::GetInstance();
-
   std::string delegates_dir_str(delegates_dir);
+
+  LOG(INFO) << "init_func(" << delegates_dir_str << ")";
+
+  std::string env("PATH=");
+  env += delegates_dir_str + "/lib;";
+  env += defaultPath;
+  putenv(env.c_str());
+
+  blender::io::usd::ensure_usd_plugin_path_registered();
+  pxr::PlugRegistry &registry = pxr::PlugRegistry::GetInstance();
   std::vector<std::string> paths;
   paths.push_back(BKE_appdir_folder_id(BLENDER_DATAFILES, "usd"));
   paths.push_back(delegates_dir_str + "/plugin");
   registry.RegisterPlugins(paths);
-  
-  std::string env("PATH=");
-  env += delegates_dir_str + "/lib;";
-  env += getenv("PATH");
-  putenv(env.c_str());
-  
-  for (pxr::PlugPluginPtr p : registry.GetAllPlugins()) {
-    printf("%s %s\n", p->GetName().c_str(), p->GetPath().c_str());
-  }
 
   stage_init();
 

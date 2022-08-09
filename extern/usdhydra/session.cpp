@@ -11,6 +11,8 @@
 #include <pxr/usdImaging/usdImagingGL/engine.h>
 #include <pxr/usdImaging/usdImagingGL/renderParams.h>
 #include <pxr/usdImaging/usdAppUtils/camera.h>
+#include <pxr/base/plug/plugin.h>
+#include <pxr/base/plug/registry.h>
 
 #include "glog/logging.h"
 
@@ -39,11 +41,11 @@ void BlenderSession::reset(BL::Context b_context, Depsgraph *depsgraph, bool is_
   }
 }
 
-void BlenderSession::render(BL::Depsgraph &b_depsgraph)
+void BlenderSession::render(BL::Depsgraph &b_depsgraph, const char *render_delegate)
 {
   imagingGLEngine = std::make_unique<pxr::UsdImagingGLEngine>();
 
-  if (!imagingGLEngine->SetRendererPlugin(TfToken("HdStormRendererPlugin"))) {
+  if (!imagingGLEngine->SetRendererPlugin(TfToken(render_delegate))) {
     return;
   }
 
@@ -148,16 +150,36 @@ void BlenderSession::view_draw(BL::Depsgraph &b_depsgraph, BL::Context &b_contex
 
   b_engine.bind_display_space_shader(b_scene);
 
+  if (get_renderer_percent_done(&imagingGLEngine) == 0.0) {
+    time_begin = chrono::steady_clock::now();
+  }
+
   imagingGLEngine->Render(stage->GetPseudoRoot(), render_params);
 
   b_engine.unbind_display_space_shader();
+
+  glClear(GL_DEPTH_BUFFER_BIT);
+
+  chrono::time_point<chrono::steady_clock> time_current = chrono::steady_clock::now();
+  chrono::milliseconds elapsed_time = chrono::duration_cast<chrono::milliseconds>(time_current - time_begin);
+
+  string formatted_time = format_milliseconds(elapsed_time);
+
+  if (!imagingGLEngine->IsConverged()) {
+    notify_status(("Time: " + formatted_time + " | Done: " +
+                   to_string(int(get_renderer_percent_done(&imagingGLEngine))) + '%').c_str(),
+                   "Render");
+  }
+  else {
+    notify_status(("Time: " + formatted_time).c_str(), "Rendering Done", false);
+  }
 }
 
-void BlenderSession::view_update(BL::Depsgraph &b_depsgraph, BL::Context &b_context)
+void BlenderSession::view_update(BL::Depsgraph &b_depsgraph, BL::Context &b_context, const char *render_delegate)
 {
   if (!imagingGLEngine) {
     imagingGLEngine = std::make_unique<pxr::UsdImagingGLEngine>();
-    imagingGLEngine->SetRendererPlugin(TfToken("HdRprPlugin"));
+    imagingGLEngine->SetRendererPlugin(TfToken(render_delegate));
   }
 
   if (imagingGLEngine->IsPauseRendererSupported()) {
@@ -209,7 +231,7 @@ pxr::UsdStageRefPtr BlenderSession::export_scene_to_usd(BL::Context b_context, D
   USDExportParams usd_export_params;
 
   usd_export_params.selected_objects_only = false;
-  usd_export_params.visible_objects_only = false;
+  usd_export_params.visible_objects_only = true;
 
   blender::io::usd::USDHierarchyIterator iter(bmain, depsgraph, usd_stage, usd_export_params);
 
@@ -251,6 +273,28 @@ pxr::UsdStageRefPtr BlenderSession::export_scene_to_usd(BL::Context b_context, D
   return usd_stage;
 }
 
+float BlenderSession::get_renderer_percent_done(std::unique_ptr<pxr::UsdImagingGLEngine> *renderer)
+{
+  float percent_done = 0.0;
+
+  VtDictionary render_stats = renderer->get()->GetRenderStats();
+
+  auto it = render_stats.find("percentDone");
+  if (it != render_stats.end()) {
+    percent_done = (float)it->second.UncheckedGet<double>();
+  }
+
+  return round(percent_done * 10.0f) / 10.0f;
+}
+
+void BlenderSession::notify_status(const char *info, const char *status, bool redraw)
+{
+  b_engine.update_stats(status, info);
+
+  if (redraw) {
+    b_engine.tag_redraw();
+  }
+};
 /* ------------------------------------------------------------------------- */
 /* Python API for BlenderSession
  */
@@ -325,8 +369,9 @@ static PyObject *render_func(PyObject * /*self*/, PyObject *args)
 {
   LOG(INFO) << "render_func";
   PyObject *pysession, *pydepsgraph;
+  const char *render_delegate;
 
-  if (!PyArg_ParseTuple(args, "OO", &pysession, &pydepsgraph)) {
+  if (!PyArg_ParseTuple(args, "OOs", &pysession, &pydepsgraph, &render_delegate)) {
     Py_RETURN_NONE;
   }
 
@@ -335,7 +380,7 @@ static PyObject *render_func(PyObject * /*self*/, PyObject *args)
   BL::Depsgraph depsgraph(depsgraphptr);
 
   BlenderSession *session = (BlenderSession *)PyLong_AsVoidPtr(pysession);
-  session->render(depsgraph);
+  session->render(depsgraph, render_delegate);
 
   Py_RETURN_NONE;
 }
@@ -349,8 +394,9 @@ static PyObject *view_update_func(PyObject * /*self*/, PyObject *args)
 {
   LOG(INFO) << "view_update_func";
   PyObject *pysession, *pydepsgraph, *pycontext, *pyspaceData, *pyregionData;
+  const char *render_delegate;
 
-  if (!PyArg_ParseTuple(args, "OOOOO", &pysession, &pydepsgraph, &pycontext, &pyspaceData, &pyregionData)) {
+  if (!PyArg_ParseTuple(args, "OOOOOs", &pysession, &pydepsgraph, &pycontext, &pyspaceData, &pyregionData, &render_delegate)) {
     Py_RETURN_NONE;
   }
 
@@ -364,7 +410,7 @@ static PyObject *view_update_func(PyObject * /*self*/, PyObject *args)
 
   BlenderSession *session = (BlenderSession *)PyLong_AsVoidPtr(pysession);
 
-  session->view_update(b_depsgraph, b_context);
+  session->view_update(b_depsgraph, b_context, render_delegate);
 
   Py_RETURN_NONE;
 }
@@ -403,18 +449,28 @@ static PyObject *view_draw_func(PyObject * /*self*/, PyObject *args)
 
 static PyObject* get_render_plugins_func(PyObject* /*self*/, PyObject* args)
 {
+  pxr::PlugRegistry &registry = pxr::PlugRegistry::GetInstance();
   TfTokenVector pluginsIds = UsdImagingGLEngine::GetRendererPlugins();
   PyObject *ret = PyTuple_New(pluginsIds.size());
   for (int i = 0; i < pluginsIds.size(); ++i) {
-    PyObject *descr = PyTuple_New(2);
-    PyTuple_SetItem(descr, 0, PyUnicode_FromString(pluginsIds[i].GetText()));
-    PyTuple_SetItem(descr, 1, PyUnicode_FromString(UsdImagingGLEngine::GetRendererDisplayName(pluginsIds[i]).c_str()));
+    PyObject *descr = PyDict_New();
+    PyDict_SetItemString(descr, "id", PyUnicode_FromString(pluginsIds[i].GetText()));
+    PyDict_SetItemString(descr, "name", PyUnicode_FromString(UsdImagingGLEngine::GetRendererDisplayName(pluginsIds[i]).c_str()));
+
+    std::string plugin_name = pluginsIds[i];
+    plugin_name = plugin_name.substr(0, plugin_name.size()-6);
+    plugin_name[0] = tolower(plugin_name[0]);
+    std::string path = "";
+    PlugPluginPtr plugin = registry.GetPluginWithName(plugin_name);
+    if (plugin) {
+        path = plugin->GetPath();
+    }
+    PyDict_SetItemString(descr, "path", PyUnicode_FromString(path.c_str()));
 
     PyTuple_SetItem(ret, i, descr);
   }
   return ret;
 }
-
 
 static PyMethodDef methods[] = {
   {"create", create_func, METH_VARARGS, ""},

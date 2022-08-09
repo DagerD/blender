@@ -57,10 +57,7 @@ def register():
     mx_nodes.register()
     properties.register()
 
-    engine.init()
     ui.register()
-    # operators.register()
-    # presets.register()
     usd_nodes.register()
     handlers.register()
 
@@ -69,10 +66,8 @@ def register():
 
 def unregister():
     ui.unregister()
-    # operators.unregister()
     mx_nodes.unregister()
     properties.unregister()
-    # presets.unregister()
     usd_nodes.unregister()
     handlers.unregister()
 

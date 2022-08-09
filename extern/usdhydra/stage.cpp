@@ -14,7 +14,9 @@ std::unique_ptr<pxr::UsdStageCache> stageCache;
 
 void stage_init()
 {
-  stageCache = std::make_unique<pxr::UsdStageCache>();
+  if (!stageCache) {
+    stageCache = std::make_unique<pxr::UsdStageCache>();
+  }
 }
 
 static PyObject *export_to_str_func(PyObject * /*self*/, PyObject *args)

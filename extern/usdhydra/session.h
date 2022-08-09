@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <chrono>
+
 #include <Python.h>
 
 #include <pxr/usd/usd/stage.h>
@@ -34,11 +36,15 @@ public:
   ~BlenderSession();
 
   void reset(BL::Context b_context, Depsgraph *depsgraph, bool is_blender_scene, int stageId);
-  void render(BL::Depsgraph &b_depsgraph);
+  void render(BL::Depsgraph &b_depsgraph, const char *render_delegate);
   void view_draw(BL::Depsgraph &b_depsgraph, BL::Context &b_context);
-  void view_update(BL::Depsgraph &b_depsgraph, BL::Context &b_context);
+  void view_update(BL::Depsgraph &b_depsgraph, BL::Context &b_context, const char *render_delegate);
   void sync(BL::Depsgraph &b_depsgraph, BL::Context &b_context);
   pxr::UsdStageRefPtr export_scene_to_usd(BL::Context b_context, Depsgraph *depsgraph);
+  float get_renderer_percent_done(std::unique_ptr<pxr::UsdImagingGLEngine> *renderer);
+
+protected:
+  void notify_status(const char *info, const char *status, bool redraw = true);
 
 public:
   BL::RenderEngine b_engine;
@@ -47,6 +53,9 @@ public:
   std::unique_ptr<pxr::UsdImagingGLEngine> imagingGLEngine;
   pxr::UsdImagingGLRenderParams render_params;
   pxr::UsdStageRefPtr stage;
+
+protected:
+  chrono::time_point<chrono::steady_clock> time_begin;
 };
 
 PyObject *addPythonSubmodule_session(PyObject *mod);

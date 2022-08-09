@@ -57,9 +57,13 @@ static PyObject *update_func(PyObject * /*self*/, PyObject *args)
   }
 
   bContext *C = (bContext *)b_context.ptr.data;
+  
+  BL::SpaceView3D space_data = (BL::SpaceView3D)b_context.space_data();
+  View3D *b_v3d = (::View3D *) space_data.ptr.data;
   Main *bmain = CTX_data_main(C);
   Scene *bscene = CTX_data_scene(C);
   ScrArea *area = CTX_wm_area(C);
+  ViewLayer *view_layer = CTX_data_view_layer(C);
   SpaceOutliner *space_outliner = CTX_wm_space_outliner(C);
 
   Collection *scene_collection = bscene->master_collection;
@@ -81,108 +85,110 @@ static PyObject *update_func(PyObject * /*self*/, PyObject *args)
     if ((area != nullptr) && (area->spacetype == SPACE_OUTLINER)) {
       outliner_cleanup_tree(space_outliner);
     }
+  }
 
-    const char *PROP_USD_SDF_PATH_NAME = "USD SDF path";
-    const int PROP_USD_SDF_PATH_MAX_LEN = 255;
+  //map<SdfPath, Object*> objects;
+  map<Object*, SdfPath> objects;
 
-    map<SdfPath, Object*> objects;
+  LISTBASE_FOREACH (CollectionObject *, coll_ob, &usd_collection->gobject) {
+    Object *obj = coll_ob->ob;
+    ID id = obj->id;
+    IDProperty *idprop = IDP_GetProperties(&id, true);
 
-    LISTBASE_FOREACH (CollectionObject *, coll_ob, &usd_collection->gobject) {
-      Object *ob = coll_ob->ob;
-      ID id = ob->id;
+    //// IDPropertyData idpropdata = idprop->data;
+    //// eIDPropertyType proptype = (eIDPropertyType)idprop->type;
+    //  
+    //IDProperty *obj_prop_usd_sdf_path = IDP_NewString("", PROP_USD_SDF_PATH_NAME, PROP_USD_SDF_PATH_MAX_LEN);
 
-      IDProperty *idprop = id.properties;
-      if (idprop) {
-        IDPropertyData idpropdata = idprop->data;
-        // eIDPropertyType proptype = (eIDPropertyType)idprop->type;
-      
-        IDProperty *obj_prop_usd_sdf_path = nullptr;
+    //if (IDP_AddToGroup(idprop, obj_prop_usd_sdf_path)) {
+    //  DEG_id_tag_update(&id, ID_RECALC_ALL);
+    //};
 
-        LISTBASE_FOREACH (IDProperty *, prop, &idprop->data.group) {
-          if (!strcmp(prop->name, PROP_USD_SDF_PATH_NAME)) {
-            obj_prop_usd_sdf_path = prop;
-            objects.insert(pair<SdfPath, Object*>(SdfPath((char *)prop->data.pointer), ob));
-            break;
-          }  
-        }
+    IDProperty *obj_prop_usd_sdf_path = IDP_GetPropertyFromGroup(idprop, PROP_USD_SDF_PATH_NAME);
 
-        if (!obj_prop_usd_sdf_path) {
-          obj_prop_usd_sdf_path = IDP_NewString("", PROP_USD_SDF_PATH_NAME, PROP_USD_SDF_PATH_MAX_LEN);
-          idprop->len++;
-          BLI_addtail(&idprop->data.group, obj_prop_usd_sdf_path);
-        }
+    //objects.insert(pair<SdfPath, Object*>(SdfPath((char *)obj_prop_usd_sdf_path->data.pointer), obj));
+    objects.insert(pair<Object*, SdfPath>(obj, SdfPath((char *)obj_prop_usd_sdf_path->data.pointer)));
+  }
 
-      
-      }
-      else {
+  set<SdfPath> obj_paths, prim_paths, paths_to_remove, paths_to_add, path_to_update;
+  //set<Object*> obj_paths, prim_paths, paths_to_remove, paths_to_add, path_to_update;
 
-      }
+  for(map<Object*, SdfPath>::iterator it = objects.begin(); it != objects.end(); ++it) {
+    //obj_paths.insert(it->first);
+    obj_paths.insert(it->second);
+  }
+
+  for (UsdPrim prim : session->stage->TraverseAll()) {
+    printf("%s %s\r\n", prim.GetPath().GetAsString().c_str(), prim.GetTypeName().GetString().c_str());
+    if (!ignore_prim(prim))  {
+      prim_paths.insert(prim.GetPath());
     }
+  }
 
-    set<SdfPath> obj_paths, prim_paths, paths_to_remove, paths_to_add, path_to_update;
+  set_difference(obj_paths.begin(), obj_paths.end(),
+                  prim_paths.begin(), prim_paths.end(),
+                  inserter(paths_to_remove, paths_to_remove.end()));
 
-    for(map<SdfPath, Object*>::iterator it = objects.begin(); it != objects.end(); ++it) {
-      obj_paths.insert(it->first);
-    }
+  set_difference(prim_paths.begin(), prim_paths.end(),
+                  obj_paths.begin(), obj_paths.end(),
+                  inserter(paths_to_add, paths_to_add.end()));
 
-    for (UsdPrim prim : session->stage->TraverseAll()) {
-      if (!ignore_prim(prim)) {
-        prim_paths.insert(prim.GetPath());
-        // printf("%s %s\r\n", prim.GetPath().GetAsString().c_str(), prim.GetTypeName().GetString().c_str());
-      }
-    }
-
-    set_difference(obj_paths.begin(), obj_paths.end(),
+  set_intersection(obj_paths.begin(), obj_paths.end(),
                     prim_paths.begin(), prim_paths.end(),
-                    inserter(paths_to_remove, paths_to_remove.end()));
+                    inserter(path_to_update, path_to_update.begin()));
 
-    set_difference(prim_paths.begin(), prim_paths.end(),
-                    obj_paths.begin(), obj_paths.end(),
-                    inserter(paths_to_add, paths_to_add.end()));
+  /*for (SdfPath path : paths_to_remove) {
+    Object *obj = objects.find(path)->second;
+    objects.erase(path);
+    BKE_collection_object_remove(bmain, usd_collection, obj, false);
+    string as = path.GetAsString();
+    int as1 = 123;
+  }*/
 
-    set_intersection(obj_paths.begin(), obj_paths.end(),
-                      prim_paths.begin(), prim_paths.end(),
-                      inserter(path_to_update, path_to_update.begin()));
+  for (SdfPath path : path_to_update) {
+    string as = path.GetAsString();
+    int as2 = 123;
+  }
 
-    for (SdfPath path : paths_to_remove) {
-      Object *obj = objects.find(path)->second;
-      objects.erase(path);
-      BKE_collection_object_remove(bmain, usd_collection, obj, false);
-      string as = path.GetAsString();
-      int as1 = 123;
-    }
+  for (SdfPath path : paths_to_add) {
+    SdfPath parent_path = path.GetParentPath();
+    Object *parent_obj = nullptr;
 
-    for (SdfPath path : path_to_update) {
-      string as = path.GetAsString();
-      int as2 = 123;
-    }
-
-    for (SdfPath path : paths_to_add) {
-      SdfPath parent_path = path.GetParentPath();
-      Object *parent_obj = nullptr;
-
-      if (parent_path.GetAsString() != "/") {
-        auto it = objects.find(parent_path);
-        if (it != objects.end()) {
-          parent_obj =  it->second;
-        }
-      }
-      UsdPrim obj_prim = session->stage->GetPrimAtPath(path);
-
-      Object *obj = BKE_object_add_only_object(bmain, OB_EMPTY, obj_prim.GetName().GetString().c_str());
-      
-      obj->parent = parent_obj;
-       
-      if (SUPPORTED_PRIM_TYPES.count(obj_prim.GetTypeName()) == 0) {
-        obj->visibility_flag |= 1;
-      }
-
-      BKE_collection_object_add(bmain, usd_collection, obj);
-      /*if (!BKE_collection_has_object(usd_collection, obj)) {
-        BKE_collection_object_add(bmain, usd_collection, obj);
+    if (parent_path.GetAsString() != "/") {
+      /*auto it = objects.find(parent_path);
+      if (it != objects.end()) {
+        parent_obj =  it->second;
       }*/
-      objects.insert(pair<SdfPath, Object*>(path, obj));
+      for (auto it = objects.begin(); it != objects.end(); ++it)
+        if (it->second == parent_path)
+            parent_obj = it->first;
     }
+    //Object *obj_from_scene = objects.find(path)->second;
+
+    Object *obj_from_scene = nullptr;
+
+    for (auto it = objects.begin(); it != objects.end(); ++it)
+        if (it->second == path)
+            obj_from_scene = it->first;
+
+    UsdPrim obj_prim = session->stage->GetPrimAtPath(path);
+
+    Object *obj = BKE_object_add_only_object(bmain, OB_EMPTY, obj_prim.GetName().GetString().c_str());
+
+    add_usd_sdf_path_prop_to_object(obj, obj_prim.GetPath().GetText());
+
+    obj->parent = parent_obj;
+       
+    if (SUPPORTED_PRIM_TYPES.count(obj_prim.GetTypeName()) == 0) {
+      obj->visibility_flag |= 1;
+    }
+
+    BKE_collection_object_add(bmain, usd_collection, obj);
+    /*if (!BKE_collection_has_object(usd_collection, obj)) {
+      BKE_collection_object_add(bmain, usd_collection, obj);
+    }*/
+    //objects.insert(pair<SdfPath, Object*>(path, obj));
+    objects.insert(pair<Object*, SdfPath>(obj, path));
   }
 
   //const char *PROP_USD_SDF_PATH_NAME = "USD SDF path";

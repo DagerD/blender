@@ -4,39 +4,30 @@
 # <pep8 compliant>
 
 import bpy
-import os
-#from pxr import UsdImagingGL
+import _usdhydra
 
 #from ..viewport import usd_collection
 #from ..export.camera import CameraData
 #from ..viewport.usd_collection import USD_CAMERA
 from . import USDHydraProperties, hdrpr_render
-from ..utils.delegate import get_delegates
-
-
-#log("Render Delegates", _render_delegates)
+from ..engine import session_get_render_plugins
 
 
 class RenderSettings(bpy.types.PropertyGroup):
     def delegate_items(self, context):
-        _render_delegates = get_delegates()
-        delegate_items = [(name, display_name, f"Hydra render delegate: {display_name}")
-                               for name, display_name in _render_delegates.items()]
+        delegates = _usdhydra.session.get_render_plugins()
+        ret = [(d['id'], d['name'], f"Hydra render delegate: {d['name']}") for d in delegates]
 
-        # make Rpr to the beginning to make it default delegate
-        index = next((index for index, (name, *_) in enumerate(delegate_items) if name == 'HdRprPlugin'), 0)
+        # move Rpr to the beginning of the list to make it default delegate
+        index = next((index for index, (name, *_) in enumerate(ret) if name == 'HdRprPlugin'), 0)
         if index != 0:
-            delegate_items.insert(0, delegate_items.pop(index))
+            ret.insert(0, ret.pop(index))
 
-        return tuple(delegate_items)
+        return ret
 
     @property
     def is_gl_delegate(self):
         return self.delegate == 'HdStormRendererPlugin'
-
-    @property
-    def delegate_name(self):
-        return get_delegates()[self.delegate]
 
     hdrpr: bpy.props.PointerProperty(type=hdrpr_render.RenderSettings)
 
@@ -89,6 +80,7 @@ class ViewportRenderSettings(RenderSettings):
     delegate: bpy.props.EnumProperty(
         name="Renderer",
         items=RenderSettings.delegate_items,
+        description="Render delegate for viewport render",
     )
 
     # def data_source_update(self, context):

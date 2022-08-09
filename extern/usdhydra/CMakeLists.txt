@@ -144,7 +144,6 @@ set(ADDON_UTILS_FILES
   addon/utils/mx.py
   addon/utils/stages.py
   addon/utils/logging.py
-  addon/utils/delegate.py
 )
 
 set(USDHYDRA_INSTALL_PATH "scripts/addons/usdhydra")
