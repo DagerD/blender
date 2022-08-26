@@ -20,4 +20,14 @@
 
 /** \} */
 
+/** \name USD Collection Struct
+ * \{ */
+
+#define _DNA_DEFAULT_UsdCollection \
+  { \
+    .usd_action = USD_COLLECTION_ACT_IMPORT, \
+  }
+
+/** \} */
+
 /* clang-format on */

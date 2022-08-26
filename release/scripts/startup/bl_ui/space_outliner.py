@@ -218,6 +218,10 @@ class OUTLINER_MT_collection(Menu):
 
         layout.operator("outliner.collection_new", text="New",
                         text_ctxt=i18n_contexts.id_collection).nested = True
+
+        if context.collection.name_full == 'USD layer':
+            layout.operator("outliner.usd_collection_new", text="New USD Collection")
+            
         layout.operator("outliner.collection_duplicate", text="Duplicate Collection")
         layout.operator("outliner.collection_duplicate_linked", text="Duplicate Linked")
         layout.operator("outliner.id_copy", text="Copy", icon='COPYDOWN')
@@ -268,6 +272,7 @@ class OUTLINER_MT_collection_new(Menu):
     @staticmethod
     def draw_without_context_menu(_context, layout):
         layout.operator("outliner.collection_new", text="New Collection").nested = True
+        layout.operator("outliner.usd_master_layer_collection_new", text="New USD master layer Collection").nested = True
         layout.operator("outliner.id_paste", text="Paste Data-Blocks", icon='PASTEDOWN')
 
     def draw(self, context):

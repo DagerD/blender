@@ -560,6 +560,8 @@ void outliner_collection_delete(struct bContext *C,
                                 bool do_hierarchy);
 
 void OUTLINER_OT_collection_new(struct wmOperatorType *ot);
+void OUTLINER_OT_usd_collection_new(struct wmOperatorType *ot);
+void OUTLINER_OT_usd_master_layer_collection_new(struct wmOperatorType *ot);
 void OUTLINER_OT_collection_duplicate_linked(struct wmOperatorType *ot);
 void OUTLINER_OT_collection_duplicate(struct wmOperatorType *ot);
 void OUTLINER_OT_collection_hierarchy_delete(struct wmOperatorType *ot);

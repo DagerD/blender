@@ -68,6 +68,8 @@ void outliner_operatortypes(void)
 
   /* collections */
   WM_operatortype_append(OUTLINER_OT_collection_new);
+  WM_operatortype_append(OUTLINER_OT_usd_collection_new);
+  WM_operatortype_append(OUTLINER_OT_usd_master_layer_collection_new);
   WM_operatortype_append(OUTLINER_OT_collection_duplicate_linked);
   WM_operatortype_append(OUTLINER_OT_collection_duplicate);
   WM_operatortype_append(OUTLINER_OT_collection_hierarchy_delete);

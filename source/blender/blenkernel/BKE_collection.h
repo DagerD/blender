@@ -96,6 +96,10 @@ struct Collection *BKE_collection_duplicate(struct Main *bmain,
 #define BKE_SCENE_COLLECTION_NAME "Scene Collection"
 struct Collection *BKE_collection_master_add(void);
 
+/* Master USD layers Collection for Scene */
+
+#define BKE_USD_MASTER_LAYER_COLLECTION_NAME "USD layer"
+
 /* Collection Objects */
 
 bool BKE_collection_has_object(struct Collection *collection, const struct Object *ob);

@@ -646,4 +646,24 @@ void RNA_def_collections(BlenderRNA *brna)
   RNA_define_lib_overridable(false);
 }
 
+void RNA_def_usd_collections(BlenderRNA *brna)
+{
+  StructRNA *srna;
+  PropertyRNA *prop;
+
+  prop = RNA_def_property(srna, "collection", PROP_COLLECTION, PROP_NONE);
+  RNA_def_property_struct_type(prop, "Collection");
+  RNA_def_property_ui_text(prop, "Collection", "Collections of USD objects");
+
+  static const EnumPropertyItem rna_collection_usd_action[] = {
+      {USD_COLLECTION_ACT_IMPORT, "IMPORT", 0, "Import", "Import USD data into Blender"},
+      {USD_COLLECTION_ACT_REFERENCE, "REFERENCE", 0, "Reference", "Reference USD data to Blender"},
+      {0, NULL, 0, NULL, NULL}};
+
+  prop = RNA_def_property(srna, "usd_action", PROP_ENUM, PROP_NONE);
+  RNA_def_property_enum_items(prop, rna_collection_usd_action);
+  RNA_def_property_ui_text(prop, "USD action", "How to handle USD scene");
+  RNA_def_property_update(prop, NC_SCENE, NULL);
+}
+
 #endif

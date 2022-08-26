@@ -156,6 +156,7 @@ SDNA_DEFAULT_DECL_STRUCT(Camera);
 
 /* DNA_collection_defaults.h */
 SDNA_DEFAULT_DECL_STRUCT(Collection);
+SDNA_DEFAULT_DECL_STRUCT(UsdCollection);
 
 /* DNA_curve_defaults.h */
 SDNA_DEFAULT_DECL_STRUCT(Curve);
@@ -365,6 +366,7 @@ const void *DNA_default_table[SDNA_TYPE_MAX] = {
 
     /* DNA_collection_defaults.h */
     SDNA_DEFAULT_DECL(Collection),
+    SDNA_DEFAULT_DECL(UsdCollection),
 
     /* DNA_curve_defaults.h */
     SDNA_DEFAULT_DECL(Curve),

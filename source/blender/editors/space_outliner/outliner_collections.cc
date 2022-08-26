@@ -246,6 +246,60 @@ static int collection_new_exec(bContext *C, wmOperator *op)
   return OPERATOR_FINISHED;
 }
 
+static int collection_new_usd_master_layer_exec(bContext *C, wmOperator *op)
+{
+  SpaceOutliner *space_outliner = CTX_wm_space_outliner(C);
+  ARegion *region = CTX_wm_region(C);
+  Main *bmain = CTX_data_main(C);
+  Scene *scene = CTX_data_scene(C);
+  ViewLayer *view_layer = CTX_data_view_layer(C);
+
+  LISTBASE_FOREACH (CollectionChild *, collection, &scene->master_collection->children) {
+    if (strcmp(BKE_collection_ui_name_get(collection->collection),
+                BKE_USD_MASTER_LAYER_COLLECTION_NAME) == 0) {
+      BKE_report(op->reports, RPT_INFO, "USD master layer Collection already exists");
+      return OPERATOR_CANCELLED;
+    }
+  }
+
+  CollectionNewData data{};
+
+  if (RNA_boolean_get(op->ptr, "nested")) {
+    outliner_build_tree(bmain, scene, view_layer, space_outliner, region);
+
+    outliner_tree_traverse(space_outliner,
+                           &space_outliner->tree,
+                           0,
+                           TSE_SELECTED,
+                           collection_find_selected_to_add,
+                           &data);
+
+    if (data.error) {
+      BKE_report(op->reports, RPT_ERROR, "More than one collection is selected");
+      return OPERATOR_CANCELLED;
+    }
+  }
+
+  if (data.collection == nullptr || ID_IS_LINKED(data.collection) ||
+      ID_IS_OVERRIDE_LIBRARY(data.collection)) {
+    data.collection = scene->master_collection;
+  }
+
+  if (ID_IS_LINKED(scene) || ID_IS_OVERRIDE_LIBRARY(scene)) {
+    BKE_report(op->reports, RPT_ERROR, "Can't add a new collection to linked/override scene");
+    return OPERATOR_CANCELLED;
+  }
+
+  BKE_collection_add(bmain, data.collection, BKE_USD_MASTER_LAYER_COLLECTION_NAME);
+
+  DEG_id_tag_update(&data.collection->id, ID_RECALC_COPY_ON_WRITE);
+  DEG_relations_tag_update(bmain);
+
+  outliner_cleanup_tree(space_outliner);
+  WM_main_add_notifier(NC_SCENE | ND_LAYER, nullptr);
+  return OPERATOR_FINISHED;
+}
+
 void OUTLINER_OT_collection_new(wmOperatorType *ot)
 {
   /* identifiers */
@@ -255,6 +309,46 @@ void OUTLINER_OT_collection_new(wmOperatorType *ot)
 
   /* api callbacks */
   ot->exec = collection_new_exec;
+  ot->poll = collection_edit_in_active_scene_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* properties */
+  PropertyRNA *prop = RNA_def_boolean(
+      ot->srna, "nested", true, "Nested", "Add as child of selected collection");
+  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+}
+
+void OUTLINER_OT_usd_collection_new(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "New USD Collection";
+  ot->idname = "OUTLINER_OT_usd_collection_new";
+  ot->description = "Add a new USD collection inside selected collection";
+
+  /* api callbacks */
+  ot->exec = collection_new_exec;
+  ot->poll = collection_edit_in_active_scene_poll;
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* properties */
+  PropertyRNA *prop = RNA_def_boolean(
+      ot->srna, "nested", true, "Nested", "Add as child of selected collection");
+  RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+}
+
+void OUTLINER_OT_usd_master_layer_collection_new(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "New USD master layer Collection";
+  ot->idname = "OUTLINER_OT_usd_master_layer_collection_new";
+  ot->description = "Add a new USD master layer collection inside selected collection";
+
+  /* api callbacks */
+  ot->exec = collection_new_usd_master_layer_exec;
   ot->poll = collection_edit_in_active_scene_poll;
 
   /* flags */

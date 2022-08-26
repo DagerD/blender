@@ -86,6 +86,21 @@ typedef struct Collection {
   struct ViewLayer *view_layer DNA_DEPRECATED;
 } Collection;
 
+enum eUsdCollection_Action {
+  USD_COLLECTION_ACT_IMPORT = (1 << 0),
+  USD_COLLECTION_ACT_REFERENCE = (1 << 1),
+};
+
+typedef struct UsdCollection {
+  struct Collection *collection;
+  //const char *usd_layer_filename;
+
+  char _pad[6];
+
+  short usd_action; /* eUSDCollection_Action */
+
+} UsdCollection;
+
 /* Collection->flag */
 enum {
   COLLECTION_HIDE_VIEWPORT = (1 << 0),             /* Disable in viewports. */
