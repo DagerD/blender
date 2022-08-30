@@ -37,6 +37,7 @@ const EnumPropertyItem rna_enum_id_type_items[] = {
     {ID_CF, "CACHEFILE", ICON_FILE, "Cache File", ""},
     {ID_CA, "CAMERA", ICON_CAMERA_DATA, "Camera", ""},
     {ID_GR, "COLLECTION", ICON_OUTLINER_COLLECTION, "Collection", ""},
+    {ID_USD, "USDCOLLECTION", ICON_OUTLINER_COLLECTION, "UsdCollection", ""},
     {ID_CU_LEGACY, "CURVE", ICON_CURVE_DATA, "Curve", ""},
     {ID_CV, "CURVES", ICON_CURVES_DATA, "Curves", ""},
     {ID_VF, "FONT", ICON_FONT_DATA, "Font", ""},
@@ -366,6 +367,9 @@ short RNA_type_to_ID_code(const StructRNA *type)
   if (base_type == &RNA_Collection) {
     return ID_GR;
   }
+  if (base_type == &RNA_UsdCollection) {
+    return ID_USD;
+  }
   if (base_type == &RNA_Image) {
     return ID_IM;
   }
@@ -486,6 +490,8 @@ StructRNA *ID_code_to_RNA_type(short idcode)
       return &RNA_GreasePencil;
     case ID_GR:
       return &RNA_Collection;
+    case ID_USD:
+      return &RNA_UsdCollection;
     case ID_CV:
       return &RNA_Curves;
     case ID_IM:
@@ -1441,6 +1447,10 @@ static void rna_def_ID_properties(BlenderRNA *brna)
   RNA_def_property_struct_type(prop, "PropertyGroup");
 
   prop = RNA_def_property(srna, "collection", PROP_COLLECTION, PROP_NONE);
+  RNA_def_property_flag(prop, PROP_IDPROPERTY);
+  RNA_def_property_struct_type(prop, "PropertyGroup");
+
+  prop = RNA_def_property(srna, "usd_collection", PROP_COLLECTION, PROP_NONE);
   RNA_def_property_flag(prop, PROP_IDPROPERTY);
   RNA_def_property_struct_type(prop, "PropertyGroup");
 

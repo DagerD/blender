@@ -63,6 +63,7 @@ typedef enum ID_Type {
   ID_SPK = MAKE_ID2('S', 'K'),       /* Speaker */
   ID_SO = MAKE_ID2('S', 'O'),        /* Sound */
   ID_GR = MAKE_ID2('G', 'R'),        /* Collection */
+  ID_USD = MAKE_ID2('U', 'S'),       /* USD Collection */
   ID_AR = MAKE_ID2('A', 'R'),        /* bArmature */
   ID_AC = MAKE_ID2('A', 'C'),        /* bAction */
   ID_NT = MAKE_ID2('N', 'T'),        /* bNodeTree */

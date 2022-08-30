@@ -543,6 +543,18 @@ static Collection *rna_Main_collections_new(Main *bmain, const char *name)
   return collection;
 }
 
+static UsdCollection *rna_Main_usd_collections_new(Main *bmain, const char *name)
+{
+  char safe_name[MAX_ID_NAME - 2];
+  rna_idname_validate(name, safe_name);
+
+  UsdCollection *collection = (UsdCollection *)BKE_collection_add(bmain, NULL, safe_name);
+
+  WM_main_add_notifier(NC_ID | NA_ADDED, NULL);
+
+  return collection;
+}
+
 static Speaker *rna_Main_speakers_new(Main *bmain, const char *name)
 {
   char safe_name[MAX_ID_NAME - 2];
@@ -829,6 +841,7 @@ RNA_MAIN_ID_TAG_FUNCS_DEF(textures, textures, ID_TE)
 RNA_MAIN_ID_TAG_FUNCS_DEF(brushes, brushes, ID_BR)
 RNA_MAIN_ID_TAG_FUNCS_DEF(worlds, worlds, ID_WO)
 RNA_MAIN_ID_TAG_FUNCS_DEF(collections, collections, ID_GR)
+RNA_MAIN_ID_TAG_FUNCS_DEF(usd_collections, usd_collections, ID_USD)
 // RNA_MAIN_ID_TAG_FUNCS_DEF(shape_keys, key, ID_KE)
 RNA_MAIN_ID_TAG_FUNCS_DEF(texts, texts, ID_TXT)
 RNA_MAIN_ID_TAG_FUNCS_DEF(speakers, speakers, ID_SPK)
@@ -1659,6 +1672,46 @@ void RNA_def_main_collections(BlenderRNA *brna, PropertyRNA *cprop)
   RNA_def_function_ui_description(func, "Remove a collection from the current blendfile");
   RNA_def_function_flag(func, FUNC_USE_REPORTS);
   parm = RNA_def_pointer(func, "collection", "Collection", "", "Collection to remove");
+  RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
+  RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
+  RNA_def_boolean(
+      func, "do_unlink", true, "", "Unlink all usages of this collection before deleting it");
+  RNA_def_boolean(func,
+                  "do_id_user",
+                  true,
+                  "",
+                  "Decrement user counter of all datablocks used by this collection");
+  RNA_def_boolean(
+      func, "do_ui_user", true, "", "Make sure interface does not reference this collection");
+
+  func = RNA_def_function(srna, "tag", "rna_Main_collections_tag");
+  parm = RNA_def_boolean(func, "value", 0, "Value", "");
+  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+}
+
+void RNA_def_main_usd_collections(BlenderRNA *brna, PropertyRNA *cprop)
+{
+  StructRNA *srna;
+  FunctionRNA *func;
+  PropertyRNA *parm;
+
+  RNA_def_property_srna(cprop, "BlendDataUsdCollections");
+  srna = RNA_def_struct(brna, "BlendDataUsdCollections", NULL);
+  RNA_def_struct_sdna(srna, "Main");
+  RNA_def_struct_ui_text(srna, "Main USD Collections", "USD Collection of collections");
+
+  func = RNA_def_function(srna, "new", "rna_Main_usd_collections_new");
+  RNA_def_function_ui_description(func, "Add a new USD collection to the main database");
+  parm = RNA_def_string(func, "name", "Collection", 0, "", "New name for the data-block");
+  RNA_def_parameter_flags(parm, 0, PARM_REQUIRED);
+  /* return type */
+  parm = RNA_def_pointer(func, "usd_collection", "UsdCollection", "", "New USD collection data-block");
+  RNA_def_function_return(func, parm);
+
+  func = RNA_def_function(srna, "remove", "rna_Main_ID_remove");
+  RNA_def_function_ui_description(func, "Remove a USD collection from the current blendfile");
+  RNA_def_function_flag(func, FUNC_USE_REPORTS);
+  parm = RNA_def_pointer(func, "usd_collection", "UsdCollection", "", "USD Collection to remove");
   RNA_def_parameter_flags(parm, PROP_NEVER_NULL, PARM_REQUIRED | PARM_RNAPTR);
   RNA_def_parameter_clear_flags(parm, PROP_THICK_WRAP, 0);
   RNA_def_boolean(

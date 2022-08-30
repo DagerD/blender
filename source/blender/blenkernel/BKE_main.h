@@ -161,6 +161,7 @@ typedef struct Main {
   ListBase lightprobes;
   ListBase sounds;
   ListBase collections;
+  ListBase usd_collections;
   ListBase armatures;
   ListBase actions;
   ListBase nodetrees;

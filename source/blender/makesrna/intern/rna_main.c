@@ -93,6 +93,7 @@ RNA_MAIN_LISTBASE_FUNCS_DEF(brushes)
 RNA_MAIN_LISTBASE_FUNCS_DEF(cachefiles)
 RNA_MAIN_LISTBASE_FUNCS_DEF(cameras)
 RNA_MAIN_LISTBASE_FUNCS_DEF(collections)
+RNA_MAIN_LISTBASE_FUNCS_DEF(usd_collections)
 RNA_MAIN_LISTBASE_FUNCS_DEF(curves)
 RNA_MAIN_LISTBASE_FUNCS_DEF(fonts)
 RNA_MAIN_LISTBASE_FUNCS_DEF(gpencils)
@@ -287,6 +288,12 @@ void RNA_def_main(BlenderRNA *brna)
        "Collections",
        "Collection data-blocks",
        RNA_def_main_collections},
+      {"usd_collections",
+       "UsdCollection",
+       "rna_Main_usd_collections_begin",
+       "USD Collections",
+       "USD Collection data-blocks",
+       RNA_def_main_usd_collections},
       {"shape_keys",
        "Key",
        "rna_Main_shapekeys_begin",

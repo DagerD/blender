@@ -182,6 +182,11 @@ struct CollectionNewData {
   Collection *collection;
 };
 
+struct UsdCollectionNewData {
+  bool error;
+  UsdCollection *collection;
+};
+
 static TreeTraversalAction collection_find_selected_to_add(TreeElement *te, void *customdata)
 {
   struct CollectionNewData *data = static_cast<CollectionNewData *>(customdata);
@@ -262,7 +267,7 @@ static int collection_new_usd_master_layer_exec(bContext *C, wmOperator *op)
     }
   }
 
-  CollectionNewData data{};
+  UsdCollectionNewData data{};
 
   if (RNA_boolean_get(op->ptr, "nested")) {
     outliner_build_tree(bmain, scene, view_layer, space_outliner, region);
@@ -282,7 +287,7 @@ static int collection_new_usd_master_layer_exec(bContext *C, wmOperator *op)
 
   if (data.collection == nullptr || ID_IS_LINKED(data.collection) ||
       ID_IS_OVERRIDE_LIBRARY(data.collection)) {
-    data.collection = scene->master_collection;
+    data.collection = (UsdCollection*)scene->master_collection;
   }
 
   if (ID_IS_LINKED(scene) || ID_IS_OVERRIDE_LIBRARY(scene)) {
@@ -290,9 +295,9 @@ static int collection_new_usd_master_layer_exec(bContext *C, wmOperator *op)
     return OPERATOR_CANCELLED;
   }
 
-  BKE_collection_add(bmain, data.collection, BKE_USD_MASTER_LAYER_COLLECTION_NAME);
+  BKE_collection_add(bmain, (Collection *)data.collection, BKE_USD_MASTER_LAYER_COLLECTION_NAME);
 
-  DEG_id_tag_update(&data.collection->id, ID_RECALC_COPY_ON_WRITE);
+  DEG_id_tag_update(&((Collection *)(data.collection))->id, ID_RECALC_COPY_ON_WRITE);
   DEG_relations_tag_update(bmain);
 
   outliner_cleanup_tree(space_outliner);
