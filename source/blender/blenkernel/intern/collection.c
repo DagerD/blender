@@ -387,6 +387,36 @@ IDTypeInfo IDType_ID_GR = {
     .lib_override_apply_post = NULL,
 };
 
+IDTypeInfo IDType_ID_USD = {
+    .id_code = ID_USD,
+    .id_filter = FILTER_ID_USD,
+    .main_listbase_index = INDEX_ID_USD,
+    .struct_size = sizeof(UsdCollection),
+    .name = "USD Collection",
+    .name_plural = "USD collections",
+    .translation_context = BLT_I18NCONTEXT_ID_COLLECTION,
+    .flags = IDTYPE_FLAGS_NO_ANIMDATA | IDTYPE_FLAGS_APPEND_IS_REUSABLE,
+    .asset_type_info = NULL,
+
+    .init_data = collection_init_data,
+    .copy_data = collection_copy_data,
+    .free_data = collection_free_data,
+    .make_local = NULL,
+    .foreach_id = collection_foreach_id,
+    .foreach_cache = NULL,
+    .foreach_path = NULL,
+    .owner_get = collection_owner_get,
+
+    .blend_write = collection_blend_write,
+    .blend_read_data = collection_blend_read_data,
+    .blend_read_lib = collection_blend_read_lib,
+    .blend_read_expand = collection_blend_read_expand,
+
+    .blend_read_undo_preserve = NULL,
+
+    .lib_override_apply_post = NULL,
+};
+
 /** \} */
 
 /* -------------------------------------------------------------------- */

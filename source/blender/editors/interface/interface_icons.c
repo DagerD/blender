@@ -2315,6 +2315,8 @@ int UI_icon_from_idcode(const int idcode)
       return ICON_OUTLINER_DATA_GREASEPENCIL;
     case ID_GR:
       return ICON_OUTLINER_COLLECTION;
+    case ID_USD:
+      return ICON_OUTLINER_COLLECTION;
     case ID_IM:
       return ICON_IMAGE_DATA;
     case ID_LA:

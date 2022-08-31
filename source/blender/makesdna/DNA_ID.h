@@ -948,6 +948,7 @@ typedef enum IDRecalcFlag {
 #define FILTER_ID_SCR (1ULL << 37)
 #define FILTER_ID_WM (1ULL << 38)
 #define FILTER_ID_LI (1ULL << 39)
+#define FILTER_ID_USD (1ULL << 40)
 
 #define FILTER_ID_ALL \
   (FILTER_ID_AC | FILTER_ID_AR | FILTER_ID_BR | FILTER_ID_CA | FILTER_ID_CU_LEGACY | \
@@ -956,7 +957,7 @@ typedef enum IDRecalcFlag {
    FILTER_ID_OB | FILTER_ID_PA | FILTER_ID_PAL | FILTER_ID_PC | FILTER_ID_SCE | FILTER_ID_SPK | \
    FILTER_ID_SO | FILTER_ID_TE | FILTER_ID_TXT | FILTER_ID_VF | FILTER_ID_WO | FILTER_ID_CF | \
    FILTER_ID_WS | FILTER_ID_LP | FILTER_ID_CV | FILTER_ID_PT | FILTER_ID_VO | FILTER_ID_SIM | \
-   FILTER_ID_KE | FILTER_ID_SCR | FILTER_ID_WM | FILTER_ID_LI)
+   FILTER_ID_KE | FILTER_ID_SCR | FILTER_ID_WM | FILTER_ID_LI | FILTER_ID_USD)
 
 /**
  * This enum defines the index assigned to each type of IDs in the array returned by
@@ -1051,6 +1052,7 @@ enum {
   /* Collection and object types. */
   INDEX_ID_OB,
   INDEX_ID_GR,
+  INDEX_ID_USD,
 
   /* Preset-like, not-really-data types, can use many other ID types but should never be used by
    * any actual data type (besides Scene, due to tool settings). */

@@ -499,6 +499,9 @@ void DepsgraphRelationBuilder::build_id(ID *id)
     case ID_GR:
       build_collection(nullptr, nullptr, (Collection *)id);
       break;
+    case ID_USD:
+      build_collection(nullptr, nullptr, (Collection *)id);
+      break;
     case ID_OB:
       build_object((Object *)id);
       break;

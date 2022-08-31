@@ -545,6 +545,9 @@ void DepsgraphNodeBuilder::build_id(ID *id)
     case ID_GR:
       build_collection(nullptr, (Collection *)id);
       break;
+    case ID_USD:
+      build_collection(nullptr, (Collection *)id);
+      break;
     case ID_OB:
       /* TODO(sergey): Get visibility from a "parent" somehow.
        *

@@ -76,6 +76,7 @@ static void id_type_init(void)
   INIT_TYPE(ID_SPK);
   INIT_TYPE(ID_SO);
   INIT_TYPE(ID_GR);
+  INIT_TYPE(ID_USD);
   INIT_TYPE(ID_AR);
   INIT_TYPE(ID_AC);
   INIT_TYPE(ID_NT);
@@ -222,6 +223,7 @@ uint64_t BKE_idtype_idcode_to_idfilter(const short idcode)
     CASE_IDFILTER(CU_LEGACY);
     CASE_IDFILTER(GD);
     CASE_IDFILTER(GR);
+    CASE_IDFILTER(USD);
     CASE_IDFILTER(CV);
     CASE_IDFILTER(IM);
     CASE_IDFILTER_NONE(IP);
@@ -280,6 +282,7 @@ short BKE_idtype_idcode_from_idfilter(const uint64_t idfilter)
     CASE_IDFILTER(CU_LEGACY);
     CASE_IDFILTER(GD);
     CASE_IDFILTER(GR);
+    CASE_IDFILTER(USD);
     CASE_IDFILTER(CV);
     CASE_IDFILTER(IM);
     CASE_IDFILTER_NONE(IP);
@@ -336,6 +339,7 @@ int BKE_idtype_idcode_to_index(const short idcode)
     CASE_IDINDEX(CU_LEGACY);
     CASE_IDINDEX(GD);
     CASE_IDINDEX(GR);
+    CASE_IDINDEX(USD);
     CASE_IDINDEX(CV);
     CASE_IDINDEX(IM);
     CASE_IDINDEX(IP);
@@ -395,6 +399,7 @@ short BKE_idtype_idcode_from_index(const int index)
     CASE_IDCODE(CU_LEGACY);
     CASE_IDCODE(GD);
     CASE_IDCODE(GR);
+    CASE_IDCODE(USD);
     CASE_IDCODE(CV);
     CASE_IDCODE(IM);
     CASE_IDCODE(IP);

@@ -2942,6 +2942,8 @@ static const char *dataname(short id_code)
       return "Data from CU";
     case ID_GR:
       return "Data from GR";
+    case ID_USD:
+      return "Data from USD";
     case ID_AR:
       return "Data from AR";
     case ID_AC:

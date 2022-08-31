@@ -144,6 +144,7 @@ static void get_element_operation_type(
         case ID_AC:
         case ID_TXT:
         case ID_GR:
+        case ID_USD:
         case ID_LS:
         case ID_LI:
         case ID_VF:

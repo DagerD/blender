@@ -1096,6 +1096,7 @@ static const char *template_id_browse_tip(const StructRNA *type)
       case ID_KE:
       case ID_VF:
       case ID_GR:
+      case ID_USD:
       case ID_WM:
         break;
     }

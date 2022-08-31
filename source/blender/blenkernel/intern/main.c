@@ -604,6 +604,8 @@ ListBase *which_libbase(Main *bmain, short type)
       return &(bmain->sounds);
     case ID_GR:
       return &(bmain->collections);
+    case ID_USD:
+      return &(bmain->usd_collections);
     case ID_AR:
       return &(bmain->armatures);
     case ID_AC:

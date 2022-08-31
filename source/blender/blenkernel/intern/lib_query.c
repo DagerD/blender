@@ -395,7 +395,8 @@ uint64_t BKE_library_id_can_use_filter_id(const ID *id_owner)
     case ID_SCE:
       return FILTER_ID_OB | FILTER_ID_WO | FILTER_ID_SCE | FILTER_ID_MC | FILTER_ID_MA |
              FILTER_ID_GR | FILTER_ID_TXT | FILTER_ID_LS | FILTER_ID_MSK | FILTER_ID_SO |
-             FILTER_ID_GD | FILTER_ID_BR | FILTER_ID_PAL | FILTER_ID_IM | FILTER_ID_NT;
+             FILTER_ID_GD | FILTER_ID_BR | FILTER_ID_PAL | FILTER_ID_IM | FILTER_ID_NT |
+             FILTER_ID_USD;
     case ID_OB:
       /* Could be more specific, but simpler to just always say 'yes' here. */
       return FILTER_ID_ALL;
@@ -406,7 +407,7 @@ uint64_t BKE_library_id_can_use_filter_id(const ID *id_owner)
     case ID_MB:
       return FILTER_ID_MA;
     case ID_MA:
-      return FILTER_ID_TE | FILTER_ID_GR;
+      return FILTER_ID_TE | FILTER_ID_GR | FILTER_ID_USD;
     case ID_TE:
       return FILTER_ID_IM | FILTER_ID_OB;
     case ID_LT:
@@ -426,13 +427,15 @@ uint64_t BKE_library_id_can_use_filter_id(const ID *id_owner)
       return FILTER_ID_SO;
     case ID_GR:
       return FILTER_ID_OB | FILTER_ID_GR;
+    case ID_USD:
+      return FILTER_ID_OB | FILTER_ID_USD;
     case ID_NT:
       /* Could be more specific, but node.id has no type restriction... */
       return FILTER_ID_ALL;
     case ID_BR:
       return FILTER_ID_BR | FILTER_ID_IM | FILTER_ID_PC | FILTER_ID_TE | FILTER_ID_MA;
     case ID_PA:
-      return FILTER_ID_OB | FILTER_ID_GR | FILTER_ID_TE;
+      return FILTER_ID_OB | FILTER_ID_GR | FILTER_ID_TE | FILTER_ID_USD;
     case ID_MC:
       return FILTER_ID_GD | FILTER_ID_IM;
     case ID_MSK:
