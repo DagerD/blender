@@ -92,6 +92,7 @@ enum eUsdCollection_Action {
 };
 
 typedef struct UsdCollection {
+  ID id;
   struct Collection *collection;
   //const char *usd_layer_filename;
 
