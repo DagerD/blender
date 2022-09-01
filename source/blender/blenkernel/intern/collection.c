@@ -387,6 +387,220 @@ IDTypeInfo IDType_ID_GR = {
     .lib_override_apply_post = NULL,
 };
 
+static void usd_collection_init_data(ID *id)
+{
+  UsdCollection *collection = (UsdCollection *)id;
+  BLI_assert(MEMCMP_STRUCT_AFTER_IS_ZERO(collection, id));
+
+  MEMCPY_STRUCT_AFTER(collection, DNA_struct_default_get(UsdCollection), id);
+}
+
+/**
+ * Only copy internal data of Collection ID from source
+ * to already allocated/initialized destination.
+ * You probably never want to use that directly,
+ * use #BKE_id_copy or #BKE_id_copy_ex for typical needs.
+ *
+ * WARNING! This function will not handle ID user count!
+ *
+ * \param flag: Copying options (see BKE_lib_id.h's LIB_ID_COPY_... flags for more).
+ */
+static void usd_collection_copy_data(Main *bmain, ID *id_dst, const ID *id_src, const int flag)
+{
+  UsdCollection *collection_dst = (UsdCollection *)id_dst;
+  const UsdCollection *collection_src = (const UsdCollection *)id_src;
+
+  BLI_assert(((collection_src->flag & COLLECTION_IS_MASTER) != 0) ==
+             ((collection_src->id.flag & LIB_EMBEDDED_DATA) != 0));
+
+  /* Do not copy collection's preview (same behavior as for objects). */
+  //if ((flag & LIB_ID_COPY_NO_PREVIEW) == 0 && false) { /* XXX TODO: temp hack. */
+  //  BKE_previewimg_id_copy(&collection_dst->id, &collection_src->id);
+  //}
+  //else {
+  //  collection_dst->preview = NULL;
+  //}
+
+  //collection_dst->flag &= ~COLLECTION_HAS_OBJECT_CACHE;
+  //collection_dst->flag &= ~COLLECTION_HAS_OBJECT_CACHE_INSTANCED;
+  //BLI_listbase_clear(&collection_dst->object_cache);
+  //BLI_listbase_clear(&collection_dst->object_cache_instanced);
+
+  //BLI_listbase_clear(&collection_dst->gobject);
+  //BLI_listbase_clear(&collection_dst->children);
+  //BLI_listbase_clear(&collection_dst->parents);
+
+  //LISTBASE_FOREACH (CollectionChild *, child, &collection_src->children) {
+  //  collection_child_add(collection_dst, child->collection, flag, false);
+  //}
+  //LISTBASE_FOREACH (CollectionObject *, cob, &collection_src->gobject) {
+  //  collection_object_add(bmain, collection_dst, cob->ob, flag, false);
+  //}
+}
+
+static void usd_collection_free_data(ID *id)
+{
+  UsdCollection *collection = (UsdCollection *)id;
+
+  /* No animation-data here. */
+  //BKE_previewimg_free(&collection->preview);
+
+  //BLI_freelistN(&collection->gobject);
+  //BLI_freelistN(&collection->children);
+  //BLI_freelistN(&collection->parents);
+
+  BKE_collection_object_cache_free(collection);
+}
+
+static void usd_collection_foreach_id(ID *id, LibraryForeachIDData *data)
+{
+  UsdCollection *collection = (UsdCollection *)id;
+
+  //LISTBASE_FOREACH (CollectionObject *, cob, &collection->gobject) {
+  //  BKE_LIB_FOREACHID_PROCESS_IDSUPER(data, cob->ob, IDWALK_CB_USER);
+  //}
+  //LISTBASE_FOREACH (CollectionChild *, child, &collection->children) {
+  //  BKE_LIB_FOREACHID_PROCESS_IDSUPER(
+  //      data, child->collection, IDWALK_CB_NEVER_SELF | IDWALK_CB_USER);
+  //}
+  //LISTBASE_FOREACH (CollectionParent *, parent, &collection->parents) {
+  //  /* XXX This is very weak. The whole idea of keeping pointers to private IDs is very bad
+  //   * anyway... */
+  //  const int cb_flag = ((parent->collection != NULL &&
+  //                        (parent->collection->id.flag & LIB_EMBEDDED_DATA) != 0) ?
+  //                           IDWALK_CB_EMBEDDED :
+  //                           IDWALK_CB_NOP);
+  //  BKE_LIB_FOREACHID_PROCESS_IDSUPER(
+  //      data, parent->collection, IDWALK_CB_NEVER_SELF | IDWALK_CB_LOOPBACK | cb_flag);
+  //}
+}
+
+static ID *usd_collection_owner_get(Main *bmain, ID *id, ID *owner_id_hint)
+{
+  if ((id->flag & LIB_EMBEDDED_DATA) == 0) {
+    return id;
+  }
+  BLI_assert((id->tag & LIB_TAG_NO_MAIN) == 0);
+
+  UsdCollection *master_collection = (UsdCollection *)id;
+  BLI_assert((master_collection->flag & COLLECTION_IS_MASTER) != 0);
+
+  if (owner_id_hint != NULL && GS(owner_id_hint->name) == ID_SCE &&
+      ((Scene *)owner_id_hint)->master_collection == master_collection) {
+    return owner_id_hint;
+  }
+
+  LISTBASE_FOREACH (Scene *, scene, &bmain->scenes) {
+    if (scene->master_collection == master_collection) {
+      return &scene->id;
+    }
+  }
+
+  BLI_assert_msg(0, "Embedded collection with no owner. Critical Main inconsistency.");
+  return NULL;
+}
+
+void BKE_usd_collection_blend_write_nolib(BlendWriter *writer, UsdCollection *collection)
+{
+  BKE_id_blend_write(writer, &collection->id);
+
+  /* Shared function for collection data-blocks and scene master collection. */
+  //BKE_previewimg_blend_write(writer, collection->preview);
+
+  //LISTBASE_FOREACH (CollectionObject *, cob, &collection->gobject) {
+  //  BLO_write_struct(writer, CollectionObject, cob);
+  //}
+
+  //LISTBASE_FOREACH (CollectionChild *, child, &collection->children) {
+  //  BLO_write_struct(writer, CollectionChild, child);
+  //}
+}
+
+static void usd_collection_blend_write(BlendWriter *writer, ID *id, const void *id_address)
+{
+  UsdCollection *collection = (UsdCollection *)id;
+
+  /* Clean up, important in undo case to reduce false detection of changed data-blocks. */
+  //collection->flag &= ~COLLECTION_HAS_OBJECT_CACHE;
+  //collection->flag &= ~COLLECTION_HAS_OBJECT_CACHE_INSTANCED;
+  //collection->tag = 0;
+  //BLI_listbase_clear(&collection->object_cache);
+  //BLI_listbase_clear(&collection->object_cache_instanced);
+  //BLI_listbase_clear(&collection->parents);
+
+  /* write LibData */
+  BLO_write_id_struct(writer, UsdCollection, id_address, &collection->id);
+
+  BKE_usd_collection_blend_write_nolib(writer, collection);
+}
+
+static void usd_collection_blend_read_data(BlendDataReader *reader, ID *id)
+{
+  UsdCollection *collection = (UsdCollection *)id;
+  BKE_collection_blend_read_data(reader, collection);
+}
+
+static void lib_link_usd_collection_data(BlendLibReader *reader,
+                                         Library *lib,
+                                         UsdCollection *collection)
+{
+  //LISTBASE_FOREACH_MUTABLE (CollectionObject *, cob, &collection->gobject) {
+  //  BLO_read_id_address(reader, lib, &cob->ob);
+
+  //  if (cob->ob == NULL) {
+  //    BLI_freelinkN(&collection->gobject, cob);
+  //  }
+  //}
+
+  //LISTBASE_FOREACH (CollectionChild *, child, &collection->children) {
+  //  BLO_read_id_address(reader, lib, &child->collection);
+  //}
+}
+
+void BKE_usd_collection_blend_read_lib(BlendLibReader *reader, UsdCollection *collection)
+{
+#ifdef USE_COLLECTION_COMPAT_28
+  if (collection->collection) {
+    BKE_collection_compat_blend_read_lib(reader, collection->id.lib, collection->collection);
+  }
+
+  //if (collection->view_layer) {
+  //  BKE_view_layer_blend_read_lib(reader, collection->id.lib, collection->view_layer);
+  //}
+#endif
+
+  lib_link_usd_collection_data(reader, collection->id.lib, collection);
+}
+
+static void usd_collection_blend_read_lib(BlendLibReader *reader, ID *id)
+{
+  UsdCollection *collection = (UsdCollection *)id;
+  BKE_usd_collection_blend_read_lib(reader, collection);
+}
+
+void BKE_usd_collection_blend_read_expand(BlendExpander *expander, UsdCollection *collection)
+{
+  //LISTBASE_FOREACH (CollectionObject *, cob, &collection->gobject) {
+  //  BLO_expand(expander, cob->ob);
+  //}
+
+  //LISTBASE_FOREACH (CollectionChild *, child, &collection->children) {
+  //  BLO_expand(expander, child->collection);
+  //}
+
+#ifdef USE_COLLECTION_COMPAT_28
+  if (collection->collection != NULL) {
+    BKE_collection_compat_blend_read_expand(expander, collection->collection);
+  }
+#endif
+}
+
+static void usd_collection_blend_read_expand(BlendExpander *expander, ID *id)
+{
+  UsdCollection *collection = (UsdCollection *)id;
+  BKE_usd_collection_blend_read_expand(expander, collection);
+}
+
 IDTypeInfo IDType_ID_USD = {
     .id_code = ID_USD,
     .id_filter = FILTER_ID_USD,
@@ -398,19 +612,19 @@ IDTypeInfo IDType_ID_USD = {
     .flags = IDTYPE_FLAGS_NO_ANIMDATA | IDTYPE_FLAGS_APPEND_IS_REUSABLE,
     .asset_type_info = NULL,
 
-    .init_data = collection_init_data,
-    .copy_data = collection_copy_data,
-    .free_data = collection_free_data,
+    .init_data = usd_collection_init_data,
+    .copy_data = usd_collection_copy_data,
+    .free_data = usd_collection_free_data,
     .make_local = NULL,
-    .foreach_id = collection_foreach_id,
+    .foreach_id = usd_collection_foreach_id,
     .foreach_cache = NULL,
     .foreach_path = NULL,
-    .owner_get = collection_owner_get,
+    .owner_get = usd_collection_owner_get,
 
-    .blend_write = collection_blend_write,
-    .blend_read_data = collection_blend_read_data,
-    .blend_read_lib = collection_blend_read_lib,
-    .blend_read_expand = collection_blend_read_expand,
+    .blend_write = usd_collection_blend_write,
+    .blend_read_data = usd_collection_blend_read_data,
+    .blend_read_lib = usd_collection_blend_read_lib,
+    .blend_read_expand = usd_collection_blend_read_expand,
 
     .blend_read_undo_preserve = NULL,
 
