@@ -2433,6 +2433,7 @@ static BIFIconID tree_element_get_icon_from_id(const ID *id)
       return (BIFIconID)ED_file_extension_icon(text->filepath);
     }
     case ID_GR:
+    case ID_USD:
       return ICON_OUTLINER_COLLECTION;
     case ID_CV:
       return ICON_OUTLINER_DATA_CURVES;

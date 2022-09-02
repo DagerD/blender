@@ -487,6 +487,7 @@ static bool parent_clear_poll(bContext *C, wmDrag *drag, const wmEvent *event)
       case ID_OB:
         return ELEM(tselem->type, TSE_MODIFIER_BASE, TSE_CONSTRAINT_BASE);
       case ID_GR:
+      case ID_USD:
         return (event->modifier & KM_SHIFT) || ELEM(tselem->type, TSE_LIBRARY_OVERRIDE_BASE);
       default:
         return true;
@@ -1144,7 +1145,7 @@ static bool collection_drop_init(bContext *C, wmDrag *drag, const int xy[2], Col
   }
 
   ID *id = drag_id->id;
-  if (!(id && ELEM(GS(id->name), ID_GR, ID_OB))) {
+  if (!(id && ELEM(GS(id->name), ID_GR, ID_USD, ID_OB))) {
     return false;
   }
 
@@ -1158,7 +1159,7 @@ static bool collection_drop_init(bContext *C, wmDrag *drag, const int xy[2], Col
   }
 
   /* Get collections. */
-  if (GS(id->name) == ID_GR) {
+  if (ELEM(GS(id->name), ID_GR, ID_USD)) {
     if (id == &to_collection->id) {
       return false;
     }
@@ -1457,7 +1458,7 @@ static int outliner_item_drag_drop_invoke(bContext *C,
     bPoseChannel *pchan = outliner_find_parent_bone(te, &te_bone);
     datastack_drop_data_init(drag, (Object *)tselem->id, pchan, te, tselem, te->directdata);
   }
-  else if (ELEM(GS(data.drag_id->name), ID_OB, ID_GR)) {
+  else if (ELEM(GS(data.drag_id->name), ID_OB, ID_GR, ID_USD)) {
     /* For collections and objects we cheat and drag all selected. */
 
     /* Only drag element under mouse if it was not selected before. */

@@ -84,6 +84,7 @@ static ID *rna_property_override_property_real_id_owner(Main *bmain,
         rna_path_prefix = "shape_keys.";
         break;
       case ID_GR:
+      case ID_USD:
       case ID_NT:
         /* Master collections, Root node trees. */
         owner_id = RNA_find_real_ID_and_path(bmain, id, &rna_path_prefix);

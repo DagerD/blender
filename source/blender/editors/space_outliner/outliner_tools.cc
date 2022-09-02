@@ -362,7 +362,7 @@ static void unlink_collection_fn(bContext *C,
       DEG_id_tag_update(&ob->id, ID_RECALC_TRANSFORM);
       DEG_relations_tag_update(bmain);
     }
-    else if (GS(tsep->id->name) == ID_GR) {
+    else if (ELEM(GS(tsep->id->name), ID_GR, ID_USD)) {
       Collection *parent = (Collection *)tsep->id;
       id_fake_user_set(&collection->id);
       BKE_collection_child_remove(bmain, parent, collection);
@@ -402,7 +402,7 @@ static void unlink_object_fn(bContext *C,
     }
 
     if (tsep && tsep->id) {
-      if (GS(tsep->id->name) == ID_GR) {
+      if (ELEM(GS(tsep->id->name), ID_GR, ID_USD)) {
         Collection *parent = (Collection *)tsep->id;
         BKE_collection_object_remove(bmain, parent, ob, true);
         DEG_id_tag_update(&parent->id, ID_RECALC_COPY_ON_WRITE);
@@ -2620,6 +2620,7 @@ static int outliner_id_operation_exec(bContext *C, wmOperator *op)
           ED_undo_push(C, "Unlink world");
           break;
         case ID_GR:
+        case ID_USD:
           outliner_do_libdata_operation(
               C, op->reports, scene, space_outliner, unlink_collection_fn, nullptr);
 
@@ -3370,6 +3371,7 @@ static int do_outliner_operation_event(bContext *C,
 
     switch (idlevel) {
       case ID_GR:
+      case ID_USD:
         WM_menu_name_call(C, "OUTLINER_MT_collection", WM_OP_INVOKE_REGION_WIN);
         return OPERATOR_FINISHED;
         break;

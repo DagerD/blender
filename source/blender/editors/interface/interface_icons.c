@@ -2205,6 +2205,7 @@ int ui_id_icon_get(const bContext *C, ID *id, const bool big)
       iconid = ui_id_screen_get_icon(C, id);
       break;
     case ID_GR:
+    case ID_USD:
       iconid = UI_icon_color_from_collection((Collection *)id);
       break;
     default:
@@ -2314,7 +2315,6 @@ int UI_icon_from_idcode(const int idcode)
     case ID_GD:
       return ICON_OUTLINER_DATA_GREASEPENCIL;
     case ID_GR:
-      return ICON_OUTLINER_COLLECTION;
     case ID_USD:
       return ICON_OUTLINER_COLLECTION;
     case ID_IM:

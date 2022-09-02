@@ -449,7 +449,7 @@ static void usd_collection_free_data(ID *id)
   //BLI_freelistN(&collection->children);
   //BLI_freelistN(&collection->parents);
 
-  BKE_collection_object_cache_free(collection);
+  //BKE_collection_object_cache_free(collection);
 }
 
 static void usd_collection_foreach_id(ID *id, LibraryForeachIDData *data)
@@ -473,31 +473,6 @@ static void usd_collection_foreach_id(ID *id, LibraryForeachIDData *data)
   //  BKE_LIB_FOREACHID_PROCESS_IDSUPER(
   //      data, parent->collection, IDWALK_CB_NEVER_SELF | IDWALK_CB_LOOPBACK | cb_flag);
   //}
-}
-
-static ID *usd_collection_owner_get(Main *bmain, ID *id, ID *owner_id_hint)
-{
-  if ((id->flag & LIB_EMBEDDED_DATA) == 0) {
-    return id;
-  }
-  BLI_assert((id->tag & LIB_TAG_NO_MAIN) == 0);
-
-  UsdCollection *master_collection = (UsdCollection *)id;
-  BLI_assert((master_collection->flag & COLLECTION_IS_MASTER) != 0);
-
-  if (owner_id_hint != NULL && GS(owner_id_hint->name) == ID_SCE &&
-      ((Scene *)owner_id_hint)->master_collection == master_collection) {
-    return owner_id_hint;
-  }
-
-  LISTBASE_FOREACH (Scene *, scene, &bmain->scenes) {
-    if (scene->master_collection == master_collection) {
-      return &scene->id;
-    }
-  }
-
-  BLI_assert_msg(0, "Embedded collection with no owner. Critical Main inconsistency.");
-  return NULL;
 }
 
 void BKE_usd_collection_blend_write_nolib(BlendWriter *writer, UsdCollection *collection)
@@ -537,7 +512,7 @@ static void usd_collection_blend_write(BlendWriter *writer, ID *id, const void *
 static void usd_collection_blend_read_data(BlendDataReader *reader, ID *id)
 {
   UsdCollection *collection = (UsdCollection *)id;
-  BKE_collection_blend_read_data(reader, collection);
+  //BKE_collection_blend_read_data(reader, collection);
 }
 
 static void lib_link_usd_collection_data(BlendLibReader *reader,
@@ -619,7 +594,7 @@ IDTypeInfo IDType_ID_USD = {
     .foreach_id = usd_collection_foreach_id,
     .foreach_cache = NULL,
     .foreach_path = NULL,
-    .owner_get = usd_collection_owner_get,
+    .owner_get = collection_owner_get,
 
     .blend_write = usd_collection_blend_write,
     .blend_read_data = usd_collection_blend_read_data,

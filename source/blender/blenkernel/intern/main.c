@@ -690,6 +690,7 @@ int set_listbasepointers(Main *bmain, ListBase *lb[/*INDEX_ID_MAX*/])
   lb[INDEX_ID_TXT] = &(bmain->texts);
   lb[INDEX_ID_SO] = &(bmain->sounds);
   lb[INDEX_ID_GR] = &(bmain->collections);
+  lb[INDEX_ID_USD] = &(bmain->usd_collections);
   lb[INDEX_ID_PAL] = &(bmain->palettes);
   lb[INDEX_ID_PC] = &(bmain->paintcurves);
   lb[INDEX_ID_BR] = &(bmain->brushes);

@@ -127,6 +127,7 @@ typedef struct TreeElementIcon {
         ID_WO, \
         ID_SPK, \
         ID_GR, \
+        ID_USD, \
         ID_AR, \
         ID_AC, \
         ID_BR, \

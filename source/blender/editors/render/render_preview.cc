@@ -374,7 +374,8 @@ static ID *duplicate_ids(ID *id, const bool allow_failure)
                                        LIB_ID_COPY_NO_ANIMDATA);
       return id_copy;
     }
-    case ID_GR: {
+    case ID_GR:
+    case ID_USD: {
       /* Doesn't really duplicate the collection. Just creates a collection instance empty. */
       BLI_assert(BKE_previewimg_id_supports_jobs(id));
       Object *instance_empty = BKE_object_add_only_object(nullptr, OB_EMPTY, nullptr);
@@ -1626,6 +1627,7 @@ static void icon_preview_startjob_all_sizes(void *customdata,
           }
           break;
         case ID_GR:
+        case ID_USD:
           BLI_assert(collection_preview_contains_geometry_recursive((Collection *)ip->id));
           /* A collection instance empty was created, so this can just reuse the object preview
            * rendering. */

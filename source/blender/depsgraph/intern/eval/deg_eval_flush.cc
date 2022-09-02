@@ -248,6 +248,7 @@ void flush_editors_id_update(Depsgraph *graph, const DEGEditorUpdateContext *upd
               ((Key *)id_orig)->from->tag |= LIB_TAG_OVERRIDE_LIBRARY_AUTOREFRESH;
               break;
             case ID_GR:
+            case ID_USD:
               BLI_assert(id_orig->flag & LIB_EMBEDDED_DATA);
               /* TODO. */
               break;

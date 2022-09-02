@@ -93,7 +93,8 @@ enum eUsdCollection_Action {
 
 typedef struct UsdCollection {
   ID id;
-  struct Collection *collection;
+  struct PreviewImage *preview;
+  struct SceneCollection *collection;
   //const char *usd_layer_filename;
 
   char _pad[6];

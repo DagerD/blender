@@ -289,7 +289,8 @@ static void updateDepsgraph(ModifierData *md, const ModifierUpdateDepsgraphConte
         add_object_relation(ctx, *object);
         break;
       }
-      case ID_GR: {
+      case ID_GR: 
+      case ID_USD: {
         Collection *collection = reinterpret_cast<Collection *>(id);
         add_collection_relation(ctx, *collection);
         break;

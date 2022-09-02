@@ -183,7 +183,7 @@ bool TreeDisplayLibraries::library_id_filter_poll(const Library *lib, ID *id) co
     return false;
   }
 
-  if (id_filter_get() == ID_GR) {
+  if (ELEM(id_filter_get(), ID_GR, ID_USD)) {
     /* Don't show child collections of non-scene master collection,
      * they are already shown as children. */
     Collection *collection = (Collection *)id;

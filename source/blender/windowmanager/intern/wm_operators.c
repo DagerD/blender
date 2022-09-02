@@ -4020,7 +4020,7 @@ static const EnumPropertyItem *rna_id_itemf(bool *r_free,
         item_tmp.value = i++;
 
         /* Show collection color tag icons in menus. */
-        if (id_type == ID_GR) {
+        if (ELEM(id_type,  ID_GR, ID_USD)) {
           item_tmp.icon = UI_icon_color_from_collection((struct Collection *)id);
         }
 

@@ -745,7 +745,8 @@ static void outliner_add_id_contents(SpaceOutliner *space_outliner,
       }
       break;
     }
-    case ID_GR: {
+    case ID_GR:
+    case ID_USD: {
       /* Don't expand for instances, creates too many elements. */
       if (!(te->parent && te->parent->idcode == ID_OB)) {
         Collection *collection = (Collection *)id;
