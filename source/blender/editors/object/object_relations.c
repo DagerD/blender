@@ -2395,7 +2395,8 @@ static int make_override_library_exec(bContext *C, wmOperator *op)
     else {
       /* Remove the found root ID from the view layer. */
       switch (GS(id_root->name)) {
-        case ID_GR: {
+        case ID_GR:
+        case ID_USD: {
           Collection *collection_root = (Collection *)id_root;
           LISTBASE_FOREACH_MUTABLE (
               CollectionParent *, collection_parent, &collection_root->parents) {

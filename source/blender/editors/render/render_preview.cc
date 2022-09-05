@@ -1924,7 +1924,7 @@ bool ED_preview_id_is_supported(const ID *id)
   if (GS(id->name) == ID_OB) {
     return object_preview_is_type_supported((const Object *)id);
   }
-  if (GS(id->name) == ID_GR) {
+  if (ELEM(GS(id->name), ID_GR, ID_USD)) {
     return collection_preview_contains_geometry_recursive((const Collection *)id);
   }
   return BKE_previewimg_id_get_p(id) != nullptr;

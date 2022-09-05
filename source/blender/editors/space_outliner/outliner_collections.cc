@@ -56,7 +56,7 @@ bool outliner_is_collection_tree_element(const TreeElement *te)
            TSE_VIEW_COLLECTION_BASE)) {
     return true;
   }
-  if ((tselem->type == TSE_SOME_ID) && te->idcode == ID_GR) {
+  if ((tselem->type == TSE_SOME_ID) && ELEM(te->idcode, ID_GR, ID_USD)) {
     return true;
   }
 
@@ -79,7 +79,7 @@ Collection *outliner_collection_from_tree_element(const TreeElement *te)
     Scene *scene = (Scene *)tselem->id;
     return scene->master_collection;
   }
-  if ((tselem->type == TSE_SOME_ID) && (te->idcode == ID_GR)) {
+  if ((tselem->type == TSE_SOME_ID) && ELEM(te->idcode, ID_GR, ID_USD)) {
     return (Collection *)tselem->id;
   }
 
@@ -96,7 +96,7 @@ TreeTraversalAction outliner_find_selected_collections(TreeElement *te, void *cu
     return TRAVERSE_CONTINUE;
   }
 
-  if ((tselem->type != TSE_SOME_ID) || (tselem->id && GS(tselem->id->name) != ID_GR)) {
+  if ((tselem->type != TSE_SOME_ID) || (tselem->id && !ELEM(GS(tselem->id->name), ID_GR, ID_USD))) {
     return TRAVERSE_SKIP_CHILDS;
   }
 

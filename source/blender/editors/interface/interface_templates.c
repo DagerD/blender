@@ -1438,7 +1438,7 @@ static void template_ID(const bContext *C,
                       UI_UNIT_Y,
                       NULL);
       }
-      else if (!(ELEM(GS(id->name), ID_GR, ID_SCE, ID_SCR, ID_OB, ID_WS)) &&
+      else if (!(ELEM(GS(id->name), ID_GR, ID_USD, ID_SCE, ID_SCR, ID_OB, ID_WS)) &&
                (hide_buttons == false)) {
         uiDefIconButR(block,
                       UI_BTYPE_ICON_TOGGLE,

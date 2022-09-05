@@ -983,7 +983,7 @@ static void id_override_library_create_hierarchy_pre_process_fn(bContext *C,
     return;
   }
 
-  if (GS(id_root_reference->name) == ID_GR && (tselem->flag & TSE_CLOSED) != 0) {
+  if (ELEM(GS(id_root_reference->name), ID_GR, ID_USD) && (tselem->flag & TSE_CLOSED) != 0) {
     /* If selected element is a (closed) collection, check all of its objects recursively, and also
      * consider the armature ones as 'selected' (i.e. to not become system overrides). */
     Collection *root_collection = reinterpret_cast<Collection *>(id_root_reference);
@@ -1001,7 +1001,7 @@ static void id_override_library_create_hierarchy_pre_process_fn(bContext *C,
       GS(tsep->id->name) == ID_OB && !ID_IS_OVERRIDE_LIBRARY(tsep->id)) {
     Object *ob = reinterpret_cast<Object *>(tsep->id);
     if (ob->type == OB_EMPTY && &ob->instance_collection->id == id_root_reference) {
-      BLI_assert(GS(id_root_reference->name) == ID_GR);
+      BLI_assert(ELEM(GS(id_root_reference->name), ID_GR, ID_USD));
       /* Empty instantiating the collection we override, we need to pass it to BKE overriding code
        * for proper handling. */
       id_instance_hint = tsep->id;
@@ -2347,7 +2347,7 @@ static TreeTraversalAction outliner_find_objects_to_delete(TreeElement *te, void
   if (outliner_is_collection_tree_element(te_parent)) {
     TreeStoreElem *tselem_parent = TREESTORE(te_parent);
     ID *id_parent = tselem_parent->id;
-    BLI_assert(GS(id_parent->name) == ID_GR);
+    BLI_assert(ELEM(GS(id_parent->name), ID_GR, ID_USD));
     if (ID_IS_OVERRIDE_LIBRARY_REAL(id_parent)) {
       return TRAVERSE_SKIP_CHILDS;
     }
