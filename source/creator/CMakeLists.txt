@@ -938,6 +938,28 @@ elseif(WIN32)
         CONFIGURATIONS Debug
       )
 
+      if(WITH_MATERIALX)
+        # MaterialX python bindings
+        install(
+          DIRECTORY ${MATERIALX_DIR}/python/debug/materialx
+          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+          CONFIGURATIONS Debug
+          PATTERN "__pycache__" EXCLUDE           # * any cache *
+          PATTERN "*.pyc" EXCLUDE
+          PATTERN "*.lib" EXCLUDE
+          PATTERN "*.pyo" EXCLUDE
+        )
+        install(
+          DIRECTORY ${MATERIALX_DIR}/python/release/materialx
+          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+          CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
+          PATTERN "__pycache__" EXCLUDE           # * any cache *
+          PATTERN "*.pyc" EXCLUDE
+          PATTERN "*.lib" EXCLUDE
+          PATTERN "*.pyo" EXCLUDE
+        )
+      endif()
+
       if(WINDOWS_PYTHON_DEBUG)
         install(
           FILES
@@ -1296,6 +1318,11 @@ if(WITH_USD)
   install(
     DIRECTORY ${USD_LIBRARY_DIR}/usd
     DESTINATION "${TARGETDIR_VER}/datafiles"
+  )
+
+  install(
+    DIRECTORY ${MATERIALX_DIR}/libraries
+    DESTINATION "${TARGETDIR_VER}/datafiles/materialx"
   )
 endif()
 
