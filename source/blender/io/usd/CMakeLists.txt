@@ -148,8 +148,8 @@ endif()
 
 # Source: https://github.com/PixarAnimationStudios/USD/blob/master/BUILDING.md#linking-whole-archives
 if(WIN32)
-  file(GLOB MaterialX_libs_release "${LIBDIR}/MaterialX/*_r.lib")
-  file(GLOB MaterialX_libs_debug "${LIBDIR}/MaterialX/*_d.lib")
+  file(GLOB MaterialX_libs_release "${LIBDIR}/materialx/lib/release/*.lib")
+  file(GLOB MaterialX_libs_debug "${LIBDIR}/materialx/lib/debug/*.lib")
 
   foreach(library ${MaterialX_libs_release})
     target_link_libraries(bf_usd INTERFACE optimized ${library})

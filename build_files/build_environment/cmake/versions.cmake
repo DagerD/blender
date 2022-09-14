@@ -422,6 +422,12 @@ set(USD_HASH e0e441a05057692a83124a1195b09eed)
 set(USD_HASH_TYPE MD5)
 set(USD_FILE usd-v${USD_VERSION}.tar.gz)
 
+set(MATERIALX_VERSION 1.38.0)
+set(MATERIALX_URI https://github.com/AcademySoftwareFoundation/MaterialX/archive/refs/tags/v${MATERIALX_VERSION}.tar.gz)
+set(MATERIALX_HASH 403a71c0ffbb83c763b2cf99853b6647)
+set(MATERIALX_HASH_TYPE MD5)
+set(MATERIALX_FILE materialx-v${MATERIALX_VERSION}.tar.gz)
+
 set(OIDN_VERSION 1.4.3)
 set(OIDN_URI https://github.com/OpenImageDenoise/oidn/releases/download/v${OIDN_VERSION}/oidn-${OIDN_VERSION}.src.tar.gz)
 set(OIDN_HASH 027093eaf5e8b4e45835b991137b38e6)

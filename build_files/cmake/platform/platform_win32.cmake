@@ -856,7 +856,7 @@ if(WITH_USD)
     set(USD_DEBUG_LIB ${USD_LIBRARY_DIR}/usd_usd_ms_d.lib)
     set(USD_PYTHON_DIR ${USD_LIBRARY_DIR}/python)
     set(USD_PLUGIN_DIR ${LIBDIR}/usd/plugin/usd)
-    set(MATERIALX_DIR ${LIBDIR}/MaterialX)
+    set(MATERIALX_DIR ${LIBDIR}/materialx)
     # Older USD had different filenames, if the new ones are
     # not found see if the older ones exist, to ease the
     # transition period while landing libs.
