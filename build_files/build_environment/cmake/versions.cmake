@@ -424,7 +424,7 @@ set(USD_FILE usd-v${USD_VERSION}.tar.gz)
 
 set(MATERIALX_VERSION 1.38.0)
 set(MATERIALX_URI https://github.com/AcademySoftwareFoundation/MaterialX/archive/refs/tags/v${MATERIALX_VERSION}.tar.gz)
-set(MATERIALX_HASH 403a71c0ffbb83c763b2cf99853b6647)
+set(MATERIALX_HASH a7dff0d865ac641cd6c85306193f2d0c)
 set(MATERIALX_HASH_TYPE MD5)
 set(MATERIALX_FILE materialx-v${MATERIALX_VERSION}.tar.gz)
 

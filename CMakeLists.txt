@@ -297,6 +297,8 @@ option(WITH_ALEMBIC             "Enable Alembic Support" ON)
 
 # Universal Scene Description support
 option(WITH_USD                 "Enable Universal Scene Description (USD) Support" ON)
+
+# MaterialX
 option(WITH_MATERIALX           "Enable MaterialX Support" ON)
 
 # 3D format support
