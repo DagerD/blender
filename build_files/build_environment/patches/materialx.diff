@@ -1,12 +1,5 @@
-diff --git a/source/MaterialXView/NanoGUI b/source/MaterialXView/NanoGUI
-index 2de5ccd..ef1f258 160000
---- a/source/MaterialXView/NanoGUI
-+++ b/source/MaterialXView/NanoGUI
-@@ -1 +1 @@
--Subproject commit 2de5ccd852f1e6340bd05cec94035b6d428ca3b2
-+Subproject commit ef1f25834b7dbc49a637cec9c9aaa21adf468f9a
 diff --git a/source/PyMaterialX/PyBind11/tools/FindPythonLibsNew.cmake b/source/PyMaterialX/PyBind11/tools/FindPythonLibsNew.cmake
-index e660c5f..853da83 100644
+index e660c5f..f691086 100644
 --- a/source/PyMaterialX/PyBind11/tools/FindPythonLibsNew.cmake
 +++ b/source/PyMaterialX/PyBind11/tools/FindPythonLibsNew.cmake
 @@ -145,6 +145,9 @@ string(REGEX REPLACE "\\\\" "/" PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR})
