@@ -1033,6 +1033,27 @@ elseif(WIN32)
             PATTERN "*.pyo" EXCLUDE                 # * any cache *
           )
         endif()
+
+      if(WITH_MATERIALX)
+        # MaterialX python bindings
+        install(
+          DIRECTORY ${LIBDIR}/materialx/python/debug/materialx
+          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+          CONFIGURATIONS Debug
+          PATTERN "__pycache__" EXCLUDE           # * any cache *
+          PATTERN "*.pyc" EXCLUDE
+          PATTERN "*.lib" EXCLUDE
+          PATTERN "*.pyo" EXCLUDE
+        )
+        install(
+          DIRECTORY ${LIBDIR}/materialx/python/release/materialx
+          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+          CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
+          PATTERN "__pycache__" EXCLUDE           # * any cache *
+          PATTERN "*.pyc" EXCLUDE
+          PATTERN "*.lib" EXCLUDE
+          PATTERN "*.pyo" EXCLUDE
+        )
       endif()
 
       if(WINDOWS_PYTHON_DEBUG)
@@ -1382,6 +1403,13 @@ if(WITH_USD)
   endif()
 endif()
 
+if(WITH_MATERIALX)
+  install(
+    DIRECTORY ${LIBDIR}/materialx/libraries
+    DESTINATION "${TARGETDIR_VER}/datafiles/materialx"
+  )
+endif()
+
 if(WIN32 AND WITH_BOOST)
   set(BOOST_COMPONENTS atomic chrono date_time filesystem
     iostreams locale program_options regex
@@ -1401,7 +1429,6 @@ if(WIN32 AND WITH_BOOST)
     endif()
   endforeach()
 endif()
-
 # vcpkg substitutes our libs with theirs, which will cause issues when you
 # you run these builds on other systems due to missing dlls. So we opt out
 # the use of vcpkg
