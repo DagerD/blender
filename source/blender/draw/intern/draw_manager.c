@@ -181,7 +181,7 @@ static void drw_task_graph_deinit(void)
 
 bool DRW_object_is_renderable(const Object *ob)
 {
-  BLI_assert((ob->base_flag & BASE_VISIBLE_DEPSGRAPH) != 0);
+  BLI_assert((ob->base_flag & BASE_ENABLED_AND_MAYBE_VISIBLE_IN_VIEWPORT) != 0);
 
   if (ob->type == OB_MESH) {
     if ((ob == DST.draw_ctx.object_edit) || DRW_object_is_in_edit_mode(ob)) {
@@ -1324,6 +1324,7 @@ void DRW_notify_view_update(const DRWUpdateContext *update_ctx)
   /* Reset before using it. */
   drw_state_prepare_clean_for_draw(&DST);
 
+  BKE_view_layer_synced_ensure(scene, view_layer);
   DST.draw_ctx = (DRWContextState){
       .region = region,
       .rv3d = rv3d,
@@ -1377,6 +1378,7 @@ static void drw_notify_view_update_offscreen(struct Depsgraph *depsgraph,
     /* Reset before using it. */
     drw_state_prepare_clean_for_draw(&DST);
 
+    BKE_view_layer_synced_ensure(scene, view_layer);
     DST.draw_ctx = (DRWContextState){
         .region = region,
         .rv3d = rv3d,
@@ -1629,6 +1631,7 @@ void DRW_draw_render_loop_ex(struct Depsgraph *depsgraph,
   ViewLayer *view_layer = DEG_get_evaluated_view_layer(depsgraph);
   RegionView3D *rv3d = region->regiondata;
 
+  BKE_view_layer_synced_ensure(scene, view_layer);
   DST.draw_ctx.evil_C = evil_C;
   DST.draw_ctx = (DRWContextState){
       .region = region,
@@ -2143,6 +2146,7 @@ void DRW_draw_render_loop_2d_ex(struct Depsgraph *depsgraph,
   Scene *scene = DEG_get_evaluated_scene(depsgraph);
   ViewLayer *view_layer = DEG_get_evaluated_view_layer(depsgraph);
 
+  BKE_view_layer_synced_ensure(scene, view_layer);
   DST.draw_ctx.evil_C = evil_C;
   DST.draw_ctx = (DRWContextState){
       .region = region,
@@ -2349,6 +2353,8 @@ void DRW_draw_select_loop(struct Depsgraph *depsgraph,
   Scene *scene = DEG_get_evaluated_scene(depsgraph);
   RenderEngineType *engine_type = ED_view3d_engine_type(scene, v3d->shading.type);
   ViewLayer *view_layer = DEG_get_evaluated_view_layer(depsgraph);
+
+  BKE_view_layer_synced_ensure(scene, view_layer);
   Object *obact = BKE_view_layer_active_object_get(view_layer);
   Object *obedit = use_obedit_skip ? NULL : OBEDIT_FROM_OBACT(obact);
 #ifndef USE_GPU_SELECT
@@ -2458,7 +2464,7 @@ void DRW_draw_select_loop(struct Depsgraph *depsgraph,
     drw_engines_world_update(scene);
 
     if (use_obedit) {
-      FOREACH_OBJECT_IN_MODE_BEGIN (view_layer, v3d, object_type, object_mode, ob_iter) {
+      FOREACH_OBJECT_IN_MODE_BEGIN (scene, view_layer, v3d, object_type, object_mode, ob_iter) {
         drw_engines_cache_populate(ob_iter);
       }
       FOREACH_OBJECT_IN_MODE_END;
@@ -2479,7 +2485,7 @@ void DRW_draw_select_loop(struct Depsgraph *depsgraph,
         }
 
         if (use_pose_exception && (ob->mode & OB_MODE_POSE)) {
-          if ((ob->base_flag & BASE_VISIBLE_VIEWLAYER) == 0) {
+          if ((ob->base_flag & BASE_ENABLED_AND_VISIBLE_IN_DEFAULT_VIEWPORT) == 0) {
             continue;
           }
         }
@@ -2580,6 +2586,7 @@ static void drw_draw_depth_loop_impl(struct Depsgraph *depsgraph,
   DST.options.is_depth = true;
 
   /* Instead of 'DRW_context_state_init(C, &DST.draw_ctx)', assign from args */
+  BKE_view_layer_synced_ensure(scene, view_layer);
   DST.draw_ctx = (DRWContextState){
       .region = region,
       .rv3d = rv3d,
@@ -2713,6 +2720,7 @@ void DRW_draw_select_id(Depsgraph *depsgraph, ARegion *region, View3D *v3d, cons
   drw_state_prepare_clean_for_draw(&DST);
 
   /* Instead of 'DRW_context_state_init(C, &DST.draw_ctx)', assign from args */
+  BKE_view_layer_synced_ensure(scene, view_layer);
   DST.draw_ctx = (DRWContextState){
       .region = region,
       .rv3d = region->regiondata,

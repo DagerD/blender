@@ -71,6 +71,7 @@
 #include "NOD_composite.h"
 #include "NOD_function.h"
 #include "NOD_geometry.h"
+#include "NOD_geometry_nodes_lazy_function.hh"
 #include "NOD_node_declaration.hh"
 #include "NOD_shader.h"
 #include "NOD_socket.h"
@@ -131,7 +132,7 @@ static void ntree_copy_data(Main *UNUSED(bmain), ID *id_dst, const ID *id_src, c
   bNodeTree *ntree_dst = (bNodeTree *)id_dst;
   const bNodeTree *ntree_src = (const bNodeTree *)id_src;
 
-  /* We never handle usercount here for own data. */
+  /* We never handle user-count here for own data. */
   const int flag_subdata = flag | LIB_ID_CREATE_NO_USER_REFCOUNT;
 
   ntree_dst->runtime = MEM_new<bNodeTreeRuntime>(__func__);
@@ -401,10 +402,10 @@ static void node_foreach_path(ID *id, BPathForeachPathData *bpath_data)
   }
 }
 
-static ID *node_owner_get(ID *id)
+static ID **node_owner_pointer_get(ID *id)
 {
   if ((id->flag & LIB_EMBEDDED_DATA) == 0) {
-    return id;
+    return NULL;
   }
   /* TODO: Sort this NO_MAIN or not for embedded node trees. See T86119. */
   // BLI_assert((id->tag & LIB_TAG_NO_MAIN) == 0);
@@ -413,7 +414,7 @@ static ID *node_owner_get(ID *id)
   BLI_assert(ntree->owner_id != NULL);
   BLI_assert(ntreeFromID(ntree->owner_id) == ntree);
 
-  return ntree->owner_id;
+  return &ntree->owner_id;
 }
 
 static void write_node_socket_default_value(BlendWriter *writer, bNodeSocket *sock)
@@ -652,8 +653,14 @@ static void direct_link_node_socket(BlendDataReader *reader, bNodeSocket *sock)
 void ntreeBlendReadData(BlendDataReader *reader, ID *owner_id, bNodeTree *ntree)
 {
   /* Special case for this pointer, do not rely on regular `lib_link` process here. Avoids needs
-   * for do_versioning, and ensures coherence of data in any case. */
-  BLI_assert((ntree->id.flag & LIB_EMBEDDED_DATA) != 0 || owner_id == nullptr);
+   * for do_versioning, and ensures coherence of data in any case.
+   *
+   * NOTE: Old versions are very often 'broken' here, just fix it silently in these cases.
+   */
+  if (BLO_read_fileversion_get(reader) > 300) {
+    BLI_assert((ntree->id.flag & LIB_EMBEDDED_DATA) != 0 || owner_id == nullptr);
+  }
+  BLI_assert(owner_id == NULL || owner_id->lib == ntree->id.lib);
   if (owner_id != nullptr && (ntree->id.flag & LIB_EMBEDDED_DATA) == 0) {
     /* This is unfortunate, but currently a lot of existing files (including startup ones) have
      * missing `LIB_EMBEDDED_DATA` flag.
@@ -661,11 +668,13 @@ void ntreeBlendReadData(BlendDataReader *reader, ID *owner_id, bNodeTree *ntree)
      * NOTE: Using do_version is not a solution here, since this code will be called before any
      * do_version takes place. Keeping it here also ensures future (or unknown existing) similar
      * bugs won't go easily unnoticed. */
-    CLOG_WARN(&LOG,
-              "Fixing root node tree '%s' owned by '%s' missing EMBEDDED tag, please consider "
-              "re-saving your (startup) file",
-              ntree->id.name,
-              owner_id->name);
+    if (BLO_read_fileversion_get(reader) > 300) {
+      CLOG_WARN(&LOG,
+                "Fixing root node tree '%s' owned by '%s' missing EMBEDDED tag, please consider "
+                "re-saving your (startup) file",
+                ntree->id.name,
+                owner_id->name);
+    }
     ntree->id.flag |= LIB_EMBEDDED_DATA;
   }
   ntree->owner_id = owner_id;
@@ -1035,7 +1044,7 @@ IDTypeInfo IDType_ID_NT = {
     /* foreach_id */ node_foreach_id,
     /* foreach_cache */ node_foreach_cache,
     /* foreach_path */ node_foreach_path,
-    /* owner_get */ node_owner_get,
+    /* owner_pointer_get */ node_owner_pointer_get,
 
     /* blend_write */ ntree_blend_write,
     /* blend_read_data */ ntree_blend_read_data,
@@ -1922,6 +1931,9 @@ static void node_socket_free(bNodeSocket *sock, const bool do_id_user)
       socket_id_user_decrement(sock);
     }
     MEM_freeN(sock->default_value);
+  }
+  if (sock->default_attribute_name) {
+    MEM_freeN(sock->default_attribute_name);
   }
   MEM_delete(sock->runtime);
 }
@@ -3006,6 +3018,9 @@ static void node_socket_interface_free(bNodeTree *UNUSED(ntree),
       socket_id_user_decrement(sock);
     }
     MEM_freeN(sock->default_value);
+  }
+  if (sock->default_attribute_name) {
+    MEM_freeN(sock->default_attribute_name);
   }
   MEM_delete(sock->runtime);
 }

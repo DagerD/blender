@@ -216,7 +216,7 @@ IDTypeInfo IDType_ID_CV = {
     /* foreach_id */ curves_foreach_id,
     /* foreach_cache */ nullptr,
     /* foreach_path */ nullptr,
-    /* owner_get */ nullptr,
+    /* owner_pointer_get */ nullptr,
 
     /* blend_write */ curves_blend_write,
     /* blend_read_data */ curves_blend_read_data,
@@ -263,7 +263,7 @@ BoundBox *BKE_curves_boundbox_get(Object *ob)
   return ob->runtime.bb;
 }
 
-bool BKE_curves_customdata_required(const Curves *UNUSED(curves), const char *name)
+bool BKE_curves_attribute_required(const Curves *UNUSED(curves), const char *name)
 {
   return STREQ(name, ATTR_POSITION);
 }

@@ -213,9 +213,7 @@ bool BKE_paint_always_hide_test(struct Object *ob);
 /**
  * Returns non-zero if any of the face's vertices are hidden, zero otherwise.
  */
-bool paint_is_face_hidden(const struct MLoopTri *lt,
-                          const bool *hide_vert,
-                          const struct MLoop *mloop);
+bool paint_is_face_hidden(const struct MLoopTri *lt, const bool *hide_poly);
 /**
  * Returns non-zero if any of the corners of the grid
  * face whose inner corner is at (x, y) are hidden, zero otherwise.
@@ -402,7 +400,7 @@ typedef struct SculptBoundaryEditInfo {
   int original_vertex_i;
 
   /* How many steps were needed to reach this vertex from the boundary. */
-  int num_propagation_steps;
+  int propagation_steps_num;
 
   /* Strength that is used to deform this vertex. */
   float strength_factor;
@@ -416,10 +414,10 @@ typedef struct SculptBoundaryPreviewEdge {
 
 typedef struct SculptBoundary {
   /* Vertex indices of the active boundary. */
-  PBVHVertRef *vertices;
-  int *vertices_i;
-  int vertices_capacity;
-  int num_vertices;
+  PBVHVertRef *verts;
+  int *verts_i;
+  int verts_capacity;
+  int verts_num;
 
   /* Distance from a vertex in the boundary to initial vertex indexed by vertex index, taking into
    * account the length of all edges between them. Any vertex that is not in the boundary will have
@@ -429,7 +427,7 @@ typedef struct SculptBoundary {
   /* Data for drawing the preview. */
   SculptBoundaryPreviewEdge *edges;
   int edges_capacity;
-  int num_edges;
+  int edges_num;
 
   /* True if the boundary loops into itself. */
   bool forms_loop;
@@ -531,13 +529,16 @@ typedef struct SculptSession {
   /* Mesh Face Sets */
   /* Total number of polys of the base mesh. */
   int totfaces;
-  /* Face sets store its visibility in the sign of the integer, using the absolute value as the
-   * Face Set ID. Positive IDs are visible, negative IDs are hidden.
-   * The 0 ID is not used by the tools or the visibility system, it is just used when creating new
+  /* The 0 ID is not used by the tools or the visibility system, it is just used when creating new
    * geometry (the trim tool, for example) to detect which geometry was just added, so it can be
    * assigned a valid Face Set after creation. Tools are not intended to run with Face Sets IDs set
    * to 0. */
   int *face_sets;
+  /**
+   * A reference to the ".hide_poly" attribute, to store whether (base) polygons are hidden.
+   * May be null.
+   */
+  bool *hide_poly;
 
   /* BMesh for dynamic topology sculpting */
   struct BMesh *bm;
@@ -689,7 +690,7 @@ void BKE_sculpt_update_object_for_edit(struct Depsgraph *depsgraph,
                                        bool need_pmap,
                                        bool need_mask,
                                        bool is_paint_tool);
-void BKE_sculpt_update_object_before_eval(const struct Scene *scene, struct Object *ob_eval);
+void BKE_sculpt_update_object_before_eval(struct Object *ob_eval);
 void BKE_sculpt_update_object_after_eval(struct Depsgraph *depsgraph, struct Object *ob_eval);
 
 /**
@@ -698,6 +699,13 @@ void BKE_sculpt_update_object_after_eval(struct Depsgraph *depsgraph, struct Obj
  */
 struct MultiresModifierData *BKE_sculpt_multires_active(const struct Scene *scene,
                                                         struct Object *ob);
+int *BKE_sculpt_face_sets_ensure(struct Mesh *mesh);
+/**
+ * Create the attribute used to store face visibility and retrieve its data.
+ * Note that changes to the face visibility have to be propagated to other domains
+ * (see #SCULPT_visibility_sync_all_from_faces).
+ */
+bool *BKE_sculpt_hide_poly_ensure(struct Mesh *mesh);
 int BKE_sculpt_mask_layers_ensure(struct Object *ob, struct MultiresModifierData *mmd);
 void BKE_sculpt_toolsettings_data_ensure(struct Scene *scene);
 
@@ -705,32 +713,7 @@ struct PBVH *BKE_sculpt_object_pbvh_ensure(struct Depsgraph *depsgraph, struct O
 
 void BKE_sculpt_bvh_update_from_ccg(struct PBVH *pbvh, struct SubdivCCG *subdiv_ccg);
 
-/**
- * This ensure that all elements in the mesh (both vertices and grids) have their visibility
- * updated according to the face sets.
- */
-void BKE_sculpt_sync_face_set_visibility(struct Mesh *mesh, struct SubdivCCG *subdiv_ccg);
-
-/**
- * Individual function to sync the Face Set visibility to mesh and grids.
- */
-void BKE_sculpt_sync_face_sets_visibility_to_base_mesh(struct Mesh *mesh);
-void BKE_sculpt_sync_face_sets_visibility_to_grids(struct Mesh *mesh,
-                                                   struct SubdivCCG *subdiv_ccg);
-
-/**
- * Ensures that a Face Set data-layers exists. If it does not, it creates one respecting the
- * visibility stored in the vertices of the mesh. If it does, it copies the visibility from the
- * mesh to the Face Sets. */
-void BKE_sculpt_face_sets_ensure_from_base_mesh_visibility(struct Mesh *mesh);
-
-/**
- * Ensures we do have expected mesh data in original mesh for the sculpt mode.
- *
- * \note IDs are expected to be original ones here, and calling code should ensure it updates its
- * depsgraph properly after calling this function if it needs up-to-date evaluated data.
- */
-void BKE_sculpt_ensure_orig_mesh_data(struct Scene *scene, struct Object *object);
+void BKE_sculpt_sync_face_visibility_to_grids(struct Mesh *mesh, struct SubdivCCG *subdiv_ccg);
 
 /**
  * Test if PBVH can be used directly for drawing, which is faster than

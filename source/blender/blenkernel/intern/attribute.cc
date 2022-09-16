@@ -103,11 +103,11 @@ static std::optional<blender::bke::MutableAttributeAccessor> get_attribute_acces
       Mesh &mesh = reinterpret_cast<Mesh &>(id);
       /* The attribute API isn't implemented for BMesh, so edit mode meshes are not supported. */
       BLI_assert(mesh.edit_mesh == nullptr);
-      return mesh_attributes_for_write(mesh);
+      return mesh.attributes_for_write();
     }
     case ID_PT: {
       PointCloud &pointcloud = reinterpret_cast<PointCloud &>(id);
-      return pointcloud_attributes_for_write(pointcloud);
+      return pointcloud.attributes_for_write();
     }
     case ID_CV: {
       Curves &curves_id = reinterpret_cast<Curves &>(id);
@@ -452,12 +452,10 @@ int BKE_id_attribute_data_length(ID *id, CustomDataLayer *layer)
 bool BKE_id_attribute_required(const ID *id, const char *name)
 {
   switch (GS(id->name)) {
-    case ID_PT: {
-      return BKE_pointcloud_customdata_required((const PointCloud *)id, name);
-    }
-    case ID_CV: {
-      return BKE_curves_customdata_required((const Curves *)id, name);
-    }
+    case ID_PT:
+      return BKE_pointcloud_attribute_required((const PointCloud *)id, name);
+    case ID_CV:
+      return BKE_curves_attribute_required((const Curves *)id, name);
     default:
       return false;
   }

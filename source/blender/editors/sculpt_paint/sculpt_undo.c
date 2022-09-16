@@ -168,9 +168,9 @@ struct PartialUpdateData {
   PBVH *pbvh;
   bool rebuild;
   char *modified_grids;
-  bool *modified_hidden_vertices;
-  bool *modified_mask_vertices;
-  bool *modified_color_vertices;
+  bool *modified_hidden_verts;
+  bool *modified_mask_verts;
+  bool *modified_color_verts;
 };
 
 /**
@@ -201,25 +201,25 @@ static void update_cb_partial(PBVHNode *node, void *userdata)
     const int *vert_indices;
     BKE_pbvh_node_num_verts(data->pbvh, node, NULL, &verts_num);
     BKE_pbvh_node_get_verts(data->pbvh, node, &vert_indices, NULL);
-    if (data->modified_mask_vertices != NULL) {
+    if (data->modified_mask_verts != NULL) {
       for (int i = 0; i < verts_num; i++) {
-        if (data->modified_mask_vertices[vert_indices[i]]) {
+        if (data->modified_mask_verts[vert_indices[i]]) {
           BKE_pbvh_node_mark_update_mask(node);
           break;
         }
       }
     }
-    if (data->modified_color_vertices != NULL) {
+    if (data->modified_color_verts != NULL) {
       for (int i = 0; i < verts_num; i++) {
-        if (data->modified_color_vertices[vert_indices[i]]) {
+        if (data->modified_color_verts[vert_indices[i]]) {
           BKE_pbvh_node_mark_update_color(node);
           break;
         }
       }
     }
-    if (data->modified_hidden_vertices != NULL) {
+    if (data->modified_hidden_verts != NULL) {
       for (int i = 0; i < verts_num; i++) {
-        if (data->modified_hidden_vertices[vert_indices[i]]) {
+        if (data->modified_hidden_verts[vert_indices[i]]) {
           if (data->rebuild) {
             BKE_pbvh_node_mark_update_visibility(node);
           }
@@ -253,7 +253,9 @@ static bool sculpt_undo_restore_deformed(
 
 static bool sculpt_undo_restore_coords(bContext *C, Depsgraph *depsgraph, SculptUndoNode *unode)
 {
+  const Scene *scene = CTX_data_scene(C);
   ViewLayer *view_layer = CTX_data_view_layer(C);
+  BKE_view_layer_synced_ensure(scene, view_layer);
   Object *ob = BKE_view_layer_active_object_get(view_layer);
   SculptSession *ss = ob->sculpt;
   SubdivCCG *subdiv_ccg = ss->subdiv_ccg;
@@ -365,7 +367,9 @@ static bool sculpt_undo_restore_coords(bContext *C, Depsgraph *depsgraph, Sculpt
 
 static bool sculpt_undo_restore_hidden(bContext *C, SculptUndoNode *unode, bool *modified_vertices)
 {
+  const Scene *scene = CTX_data_scene(C);
   ViewLayer *view_layer = CTX_data_view_layer(C);
+  BKE_view_layer_synced_ensure(scene, view_layer);
   Object *ob = BKE_view_layer_active_object_get(view_layer);
   SculptSession *ss = ob->sculpt;
   SubdivCCG *subdiv_ccg = ss->subdiv_ccg;
@@ -395,7 +399,9 @@ static bool sculpt_undo_restore_hidden(bContext *C, SculptUndoNode *unode, bool 
 
 static bool sculpt_undo_restore_color(bContext *C, SculptUndoNode *unode, bool *modified_vertices)
 {
+  const Scene *scene = CTX_data_scene(C);
   ViewLayer *view_layer = CTX_data_view_layer(C);
+  BKE_view_layer_synced_ensure(scene, view_layer);
   Object *ob = BKE_view_layer_active_object_get(view_layer);
   SculptSession *ss = ob->sculpt;
 
@@ -427,7 +433,9 @@ static bool sculpt_undo_restore_color(bContext *C, SculptUndoNode *unode, bool *
 
 static bool sculpt_undo_restore_mask(bContext *C, SculptUndoNode *unode, bool *modified_vertices)
 {
+  const Scene *scene = CTX_data_scene(C);
   ViewLayer *view_layer = CTX_data_view_layer(C);
+  BKE_view_layer_synced_ensure(scene, view_layer);
   Object *ob = BKE_view_layer_active_object_get(view_layer);
   SculptSession *ss = ob->sculpt;
   SubdivCCG *subdiv_ccg = ss->subdiv_ccg;
@@ -473,12 +481,15 @@ static bool sculpt_undo_restore_mask(bContext *C, SculptUndoNode *unode, bool *m
 
 static bool sculpt_undo_restore_face_sets(bContext *C, SculptUndoNode *unode)
 {
+  const Scene *scene = CTX_data_scene(C);
   ViewLayer *view_layer = CTX_data_view_layer(C);
+  BKE_view_layer_synced_ensure(scene, view_layer);
   Object *ob = BKE_view_layer_active_object_get(view_layer);
   Mesh *me = BKE_object_get_original_mesh(ob);
-  int *face_sets = CustomData_get_layer(&me->pdata, CD_SCULPT_FACE_SETS);
+  int *face_sets = CustomData_add_layer(
+      &me->pdata, CD_SCULPT_FACE_SETS, CD_CONSTRUCT, NULL, me->totpoly);
   for (int i = 0; i < me->totpoly; i++) {
-    face_sets[i] = unode->face_sets[i];
+    SWAP(int, face_sets[i], unode->face_sets[i]);
   }
   return false;
 }
@@ -721,6 +732,7 @@ static void sculpt_undo_restore_list(bContext *C, Depsgraph *depsgraph, ListBase
   Scene *scene = CTX_data_scene(C);
   ViewLayer *view_layer = CTX_data_view_layer(C);
   View3D *v3d = CTX_wm_view3d(C);
+  BKE_view_layer_synced_ensure(scene, view_layer);
   Object *ob = BKE_view_layer_active_object_get(view_layer);
   SculptSession *ss = ob->sculpt;
   SubdivCCG *subdiv_ccg = ss->subdiv_ccg;
@@ -755,7 +767,7 @@ static void sculpt_undo_restore_list(bContext *C, Depsgraph *depsgraph, ListBase
 
       BKE_sculpt_update_object_for_edit(depsgraph, ob, true, need_mask, false);
 
-      SCULPT_visibility_sync_all_face_sets_to_vertices(ob);
+      SCULPT_visibility_sync_all_from_faces(ob);
 
       BKE_pbvh_update_vertex_data(ss->pbvh, PBVH_UpdateVisibility);
 
@@ -790,9 +802,9 @@ static void sculpt_undo_restore_list(bContext *C, Depsgraph *depsgraph, ListBase
   /* The PBVH already keeps track of which vertices need updated normals, but it doesn't keep track
    * of other updated. In order to tell the corresponding PBVH nodes to update, keep track of which
    * elements were updated for specific layers. */
-  bool *modified_hidden_vertices = NULL;
-  bool *modified_mask_vertices = NULL;
-  bool *modified_color_vertices = NULL;
+  bool *modified_hidden_verts = NULL;
+  bool *modified_mask_verts = NULL;
+  bool *modified_color_verts = NULL;
   char *undo_modified_grids = NULL;
   bool use_multires_undo = false;
 
@@ -825,19 +837,19 @@ static void sculpt_undo_restore_list(bContext *C, Depsgraph *depsgraph, ListBase
         }
         break;
       case SCULPT_UNDO_HIDDEN:
-        if (modified_hidden_vertices == NULL) {
-          modified_hidden_vertices = MEM_calloc_arrayN(ss->totvert, sizeof(bool), __func__);
+        if (modified_hidden_verts == NULL) {
+          modified_hidden_verts = MEM_calloc_arrayN(ss->totvert, sizeof(bool), __func__);
         }
-        if (sculpt_undo_restore_hidden(C, unode, modified_hidden_vertices)) {
+        if (sculpt_undo_restore_hidden(C, unode, modified_hidden_verts)) {
           rebuild = true;
           update_visibility = true;
         }
         break;
       case SCULPT_UNDO_MASK:
-        if (modified_mask_vertices == NULL) {
-          modified_mask_vertices = MEM_calloc_arrayN(ss->totvert, sizeof(bool), __func__);
+        if (modified_mask_verts == NULL) {
+          modified_mask_verts = MEM_calloc_arrayN(ss->totvert, sizeof(bool), __func__);
         }
-        if (sculpt_undo_restore_mask(C, unode, modified_mask_vertices)) {
+        if (sculpt_undo_restore_mask(C, unode, modified_mask_verts)) {
           update = true;
           update_mask = true;
         }
@@ -845,10 +857,10 @@ static void sculpt_undo_restore_list(bContext *C, Depsgraph *depsgraph, ListBase
       case SCULPT_UNDO_FACE_SETS:
         break;
       case SCULPT_UNDO_COLOR:
-        if (modified_color_vertices == NULL) {
-          modified_color_vertices = MEM_calloc_arrayN(ss->totvert, sizeof(bool), __func__);
+        if (modified_color_verts == NULL) {
+          modified_color_verts = MEM_calloc_arrayN(ss->totvert, sizeof(bool), __func__);
         }
-        if (sculpt_undo_restore_color(C, unode, modified_color_vertices)) {
+        if (sculpt_undo_restore_color(C, unode, modified_color_verts)) {
           update = true;
         }
 
@@ -899,9 +911,9 @@ static void sculpt_undo_restore_list(bContext *C, Depsgraph *depsgraph, ListBase
         .rebuild = rebuild,
         .pbvh = ss->pbvh,
         .modified_grids = undo_modified_grids,
-        .modified_hidden_vertices = modified_hidden_vertices,
-        .modified_mask_vertices = modified_mask_vertices,
-        .modified_color_vertices = modified_color_vertices,
+        .modified_hidden_verts = modified_hidden_verts,
+        .modified_mask_verts = modified_mask_verts,
+        .modified_color_verts = modified_color_verts,
     };
     BKE_pbvh_search_callback(ss->pbvh, NULL, NULL, update_cb_partial, &data);
     BKE_pbvh_update_bounds(ss->pbvh, PBVH_UpdateBB | PBVH_UpdateOriginalBB | PBVH_UpdateRedraw);
@@ -911,7 +923,6 @@ static void sculpt_undo_restore_list(bContext *C, Depsgraph *depsgraph, ListBase
     }
 
     if (update_visibility) {
-      SCULPT_visibility_sync_all_vertex_to_face_sets(ss);
       BKE_pbvh_update_visibility(ss->pbvh);
     }
 
@@ -947,9 +958,9 @@ static void sculpt_undo_restore_list(bContext *C, Depsgraph *depsgraph, ListBase
     }
   }
 
-  MEM_SAFE_FREE(modified_hidden_vertices);
-  MEM_SAFE_FREE(modified_mask_vertices);
-  MEM_SAFE_FREE(modified_color_vertices);
+  MEM_SAFE_FREE(modified_hidden_verts);
+  MEM_SAFE_FREE(modified_mask_verts);
+  MEM_SAFE_FREE(modified_color_verts);
   MEM_SAFE_FREE(undo_modified_grids);
 }
 
@@ -1354,8 +1365,13 @@ static SculptUndoNode *sculpt_undo_face_sets_push(Object *ob, SculptUndoType typ
   unode->face_sets = MEM_callocN(me->totpoly * sizeof(int), "sculpt face sets");
 
   const int *face_sets = CustomData_get_layer(&me->pdata, CD_SCULPT_FACE_SETS);
-  for (int i = 0; i < me->totpoly; i++) {
-    unode->face_sets[i] = face_sets[i];
+  if (face_sets) {
+    for (int i = 0; i < me->totpoly; i++) {
+      unode->face_sets[i] = face_sets[i];
+    }
+  }
+  else {
+    memset(unode->face_sets, SCULPT_FACE_SET_NONE, sizeof(int) * me->totpoly);
   }
 
   BLI_addtail(&usculpt->nodes, unode);
@@ -1513,7 +1529,9 @@ SculptUndoNode *SCULPT_undo_push_node(Object *ob, PBVHNode *node, SculptUndoType
       sculpt_undo_store_hidden(ob, unode);
       break;
     case SCULPT_UNDO_MASK:
-      sculpt_undo_store_mask(ob, unode);
+      if (pbvh_has_mask(ss->pbvh)) {
+        sculpt_undo_store_mask(ob, unode);
+      }
       break;
     case SCULPT_UNDO_COLOR:
       sculpt_undo_store_color(ob, unode);
@@ -1815,6 +1833,7 @@ static void sculpt_undosys_step_decode(
   {
     Scene *scene = CTX_data_scene(C);
     ViewLayer *view_layer = CTX_data_view_layer(C);
+    BKE_view_layer_synced_ensure(scene, view_layer);
     Object *ob = BKE_view_layer_active_object_get(view_layer);
     if (ob && (ob->type == OB_MESH)) {
       if (ob->mode & (OB_MODE_SCULPT | OB_MODE_VERTEX_PAINT)) {

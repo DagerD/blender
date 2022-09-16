@@ -53,6 +53,7 @@
 #include "BKE_idtype.h"
 #include "BKE_key.h"
 #include "BKE_lattice.h"
+#include "BKE_layer.h"
 #include "BKE_lib_id.h"
 #include "BKE_lib_query.h"
 #include "BKE_main.h"
@@ -494,7 +495,7 @@ IDTypeInfo IDType_ID_PA = {
     .foreach_id = particle_settings_foreach_id,
     .foreach_cache = NULL,
     .foreach_path = NULL,
-    .owner_get = NULL,
+    .owner_pointer_get = NULL,
 
     .blend_write = particle_settings_blend_write,
     .blend_read_data = particle_settings_blend_read_data,
@@ -761,13 +762,15 @@ static PTCacheEdit *psys_orig_edit_get(ParticleSystem *psys)
 
 bool psys_in_edit_mode(Depsgraph *depsgraph, const ParticleSystem *psys)
 {
-  const ViewLayer *view_layer = DEG_get_input_view_layer(depsgraph);
-  if (view_layer->basact == NULL) {
+  const Scene *scene = DEG_get_input_scene(depsgraph);
+  ViewLayer *view_layer = DEG_get_input_view_layer(depsgraph);
+  BKE_view_layer_synced_ensure(scene, view_layer);
+  const Object *object = BKE_view_layer_active_object_get(view_layer);
+  if (object == NULL) {
     /* TODO(sergey): Needs double-check with multi-object edit. */
     return false;
   }
   const bool use_render_params = (DEG_get_mode(depsgraph) == DAG_EVAL_RENDER);
-  const Object *object = view_layer->basact->object;
   if (object->mode != OB_MODE_PARTICLE_EDIT) {
     return false;
   }
@@ -2120,8 +2123,8 @@ void psys_particle_on_dm(Mesh *mesh_final,
   const float(*vert_normals)[3] = BKE_mesh_vertex_normals_ensure(mesh_final);
 
   if (from == PART_FROM_VERT) {
-    const MVert *vertices = BKE_mesh_verts(mesh_final);
-    copy_v3_v3(vec, vertices[mapindex].co);
+    const MVert *verts = BKE_mesh_verts(mesh_final);
+    copy_v3_v3(vec, verts[mapindex].co);
 
     if (nor) {
       copy_v3_v3(nor, vert_normals[mapindex]);

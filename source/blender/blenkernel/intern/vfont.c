@@ -81,7 +81,7 @@ static void vfont_copy_data(Main *UNUSED(bmain),
 {
   VFont *vfont_dst = (VFont *)id_dst;
 
-  /* We never handle usercount here for own data. */
+  /* We never handle user-count here for own data. */
   const int flag_subdata = flag | LIB_ID_CREATE_NO_USER_REFCOUNT;
 
   /* Just to be sure, should not have any value actually after reading time. */
@@ -171,7 +171,7 @@ IDTypeInfo IDType_ID_VF = {
     .foreach_id = NULL,
     .foreach_cache = NULL,
     .foreach_path = vfont_foreach_path,
-    .owner_get = NULL,
+    .owner_pointer_get = NULL,
 
     .blend_write = vfont_blend_write,
     .blend_read_data = vfont_blend_read_data,
