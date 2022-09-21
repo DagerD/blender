@@ -941,7 +941,7 @@ elseif(WIN32)
       if(WITH_MATERIALX)
         # MaterialX python bindings
         install(
-          DIRECTORY ${LIBDIR}/materialx/python/debug/materialx
+          DIRECTORY ${LIBDIR}/materialx/python/debug/MaterialX
           DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
           CONFIGURATIONS Debug
           PATTERN "__pycache__" EXCLUDE           # * any cache *
@@ -950,7 +950,7 @@ elseif(WIN32)
           PATTERN "*.pyo" EXCLUDE
         )
         install(
-          DIRECTORY ${LIBDIR}/materialx/python/release/materialx
+          DIRECTORY ${LIBDIR}/materialx/python/release/MaterialX
           DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
           CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
           PATTERN "__pycache__" EXCLUDE           # * any cache *
