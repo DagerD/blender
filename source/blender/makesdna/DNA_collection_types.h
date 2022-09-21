@@ -87,6 +87,10 @@ typedef struct Collection {
   /* Deprecated */
   struct SceneCollection *collection DNA_DEPRECATED;
   struct ViewLayer *view_layer DNA_DEPRECATED;
+
+  /* rot en drot have to be together! (transform('r' en 's')) */
+  float loc[3], dloc[3];
+
 } Collection;
 
 /* Collection->flag */

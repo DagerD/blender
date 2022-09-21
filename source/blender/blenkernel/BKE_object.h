@@ -249,6 +249,7 @@ void BKE_object_rot_to_mat3(const struct Object *ob, float r_mat[3][3], bool use
 void BKE_object_mat3_to_rot(struct Object *ob, float r_mat[3][3], bool use_compat);
 void BKE_object_to_mat3(struct Object *ob, float r_mat[3][3]);
 void BKE_object_to_mat4(struct Object *ob, float r_mat[4][4]);
+void BKE_collection_to_object_to_mat4(struct Object *ob, struct Collection *coll);
 /**
  * Applies the global transformation \a mat to the \a ob using a relative parent space if
  * supplied.

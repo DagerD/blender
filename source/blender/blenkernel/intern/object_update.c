@@ -62,6 +62,25 @@ void BKE_object_eval_local_transform(Depsgraph *depsgraph, Object *ob)
 
   /* calculate local matrix */
   BKE_object_to_mat4(ob, ob->obmat);
+
+  Scene *bscene = DEG_get_input_scene(depsgraph);
+  Collection *scene_collection = bscene->master_collection;
+
+  for (CollectionChild *collection = (CollectionChild *)scene_collection->children.first;
+       collection != NULL;
+       collection = collection->next) {
+    for (CollectionObject *obj = (CollectionObject *)&collection->collection->gobject.first; obj;
+         obj = obj->next) {
+      if (obj->ob != NULL && !strcmp(obj->ob->id.name, ob->id.name)) {
+        BKE_collection_to_object_to_mat4(ob, collection->collection);
+      }
+    }
+    /*CollectionObject
+    if (BKE_collection_has_object(collection->collection, ob)) {
+      BKE_collection_to_object_to_mat4(ob, collection->collection);
+      break;
+    }*/
+  }
 }
 
 void BKE_object_eval_parent(Depsgraph *depsgraph, Object *ob)

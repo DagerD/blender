@@ -429,6 +429,40 @@ static void rna_Collection_instance_offset_update(Main *UNUSED(bmain),
   DEG_id_tag_update(&collection->id, ID_RECALC_GEOMETRY);
 }
 
+static void rna_Collection_transform_update(Main bmain, Scene scene, PointerRNA *ptr)
+{
+  Collection *coll = (Collection *)ptr->data;
+  //LISTBASE_FOREACH (CollectionObject *, coll_ob, &coll->gobject) {
+  //  Object *obj = coll_ob->ob;
+  //  obj->loc[0] += coll->loc[0];
+  //  obj->loc[1] += coll->loc[1];
+  //  obj->loc[2] += coll->loc[2];
+
+  //  //rna_Object_internal_update(bmain, scene, ptr);
+  //  //DEG_id_tag_update(, ID_RECALC_TRANSFORM);
+  //}
+  //DEG_id_tag_update(ptr->owner_id, ID_RECALC_TRANSFORM);
+}
+
+static int rna_Collection_location_editable(PointerRNA *ptr, int index)
+{
+  Collection *coll = (Collection *)ptr->data;
+  return PROP_EDITABLE;
+  /* only if the axis in question is locked, not editable... */
+  /*if ((index == 0) && (coll->protectflag & OB_LOCK_LOCX)) {
+    return 0;
+  }
+  else if ((index == 1) && (coll->protectflag & OB_LOCK_LOCY)) {
+    return 0;
+  }
+  else if ((index == 2) && (coll->protectflag & OB_LOCK_LOCZ)) {
+    return 0;
+  }
+  else {
+    return PROP_EDITABLE;
+  }*/
+}
+
 #else
 
 /* collection.objects */
@@ -644,6 +678,13 @@ void RNA_def_collections(BlenderRNA *brna)
   RNA_def_property_update(prop, NC_SCENE | ND_LAYER_CONTENT, "rna_Collection_color_tag_update");
 
   RNA_define_lib_overridable(false);
+
+  prop = RNA_def_property(srna, "location", PROP_FLOAT, PROP_TRANSLATION);
+  RNA_def_property_float_sdna(prop, NULL, "loc");
+  RNA_def_property_editable_array_func(prop, "rna_Collection_location_editable");
+  RNA_def_property_ui_text(prop, "Location", "Location of the object");
+  RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
+  RNA_def_property_update(prop, NC_OBJECT | ND_TRANSFORM, "rna_Collection_transform_update");
 }
 
 #endif

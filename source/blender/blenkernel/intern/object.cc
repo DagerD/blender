@@ -3094,6 +3094,10 @@ void BKE_object_to_mat4(Object *ob, float r_mat[4][4])
   add_v3_v3v3(r_mat[3], ob->loc, ob->dloc);
 }
 
+void BKE_collection_to_object_to_mat4(struct Object *ob, struct Collection *coll) {
+  add_v3_v3v3(ob->obmat[3], ob->loc, coll->loc);
+}
+
 void BKE_object_matrix_local_get(struct Object *ob, float r_mat[4][4])
 {
   if (ob->parent) {
