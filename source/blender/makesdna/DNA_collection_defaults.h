@@ -16,6 +16,8 @@
 #define _DNA_DEFAULT_Collection \
   { \
     .color_tag = COLLECTION_COLOR_NONE, \
+    .scale = {1, 1, 1}, \
+    .dscale = {1, 1, 1}, \
   }
 
 /** \} */

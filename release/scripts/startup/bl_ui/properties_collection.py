@@ -73,6 +73,31 @@ class COLLECTION_PT_instancing(CollectionButtonsPanel, Panel):
         row.menu("COLLECTION_MT_context_menu_instance_offset", icon='DOWNARROW_HLT', text="")
 
 
+class COLLECTION_PT_transform(CollectionButtonsPanel, Panel):
+    bl_label = "Transform"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+        collection = context.collection
+
+        col = layout.column()
+        row = col.row(align=True)
+        row.prop(collection, "location")
+        row.use_property_decorate = False
+
+        col = layout.column()
+        row = col.row(align=True)
+        row.prop(collection, "rotation_euler", text="Rotation")
+        row.use_property_decorate = False
+
+        col = layout.column()
+        row = col.row(align=True)
+        row.prop(collection, "scale")
+        row.use_property_decorate = False
+
+
 class COLLECTION_PT_lineart_collection(CollectionButtonsPanel, Panel):
     bl_label = "Line Art"
     bl_order = 10
@@ -112,6 +137,7 @@ classes = (
     COLLECTION_MT_context_menu_instance_offset,
     COLLECTION_PT_collection_flags,
     COLLECTION_PT_instancing,
+    COLLECTION_PT_transform,
     COLLECTION_PT_lineart_collection,
     COLLECTION_PT_collection_custom_props,
 )

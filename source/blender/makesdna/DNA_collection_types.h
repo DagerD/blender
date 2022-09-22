@@ -90,7 +90,12 @@ typedef struct Collection {
 
   /* rot en drot have to be together! (transform('r' en 's')) */
   float loc[3], dloc[3];
-
+  /** Scale (can be negative). */
+  float scale[3];
+  /** Ack!, changing. */
+  float dscale[3];
+  /** Euler rotation. */
+  float rot[3], drot[3];
 } Collection;
 
 /* Collection->flag */

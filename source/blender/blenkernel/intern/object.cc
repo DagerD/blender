@@ -3094,7 +3094,26 @@ void BKE_object_to_mat4(Object *ob, float r_mat[4][4])
   add_v3_v3v3(r_mat[3], ob->loc, ob->dloc);
 }
 
-void BKE_collection_to_object_to_mat4(struct Object *ob, struct Collection *coll) {
+void BKE_collection_to_object_to_mat4(struct Object *ob, struct Collection *coll)
+{
+  float smat[3][3];
+  float rmat[3][3];
+  float dmat[3][3];
+  float mat[3][3];
+  float tmat[3][3];
+  const float dscale[] = {1.0, 1.0, 1.0};
+  float3 vec;
+  mul_v3_v3v3(vec, coll->scale, dscale);
+  size_to_mat3(smat, vec);
+
+  eulO_to_mat3(rmat, coll->rot, ob->rotmode);
+  eulO_to_mat3(dmat, coll->drot, ob->rotmode);
+
+  mul_m3_m3m3(mat, dmat, rmat);
+  mul_m3_m3m3(tmat, rmat, smat);
+
+  copy_m4_m3(ob->obmat, tmat);
+
   add_v3_v3v3(ob->obmat[3], ob->loc, coll->loc);
 }
 
