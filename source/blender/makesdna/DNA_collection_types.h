@@ -97,6 +97,9 @@ typedef struct Collection {
 
   char _pad1[6];
 
+  struct Collection *referenced_collection;
+  struct Object *referenced_object;
+
   /* rot en drot have to be together! (transform('r' en 's')) */
   float loc[3], dloc[3];
   /** Scale (can be negative). */

@@ -726,6 +726,22 @@ void RNA_def_collections(BlenderRNA *brna)
   RNA_def_property_ui_text(prop, "Object type", "What to reference to this collection");
   RNA_def_property_update(prop, NC_SCENE, NULL);
 
+  prop = RNA_def_property(srna, "referenced_collection", PROP_POINTER, PROP_NONE);
+  RNA_def_property_struct_type(prop, "Collection");
+  RNA_def_property_pointer_sdna(prop, NULL, "referenced_collection");
+  RNA_def_property_flag(prop, PROP_EDITABLE);
+  //RNA_def_property_pointer_funcs(prop, NULL, "rna_Collection_referenced_collection_set", NULL, NULL);
+  RNA_def_property_ui_text(prop, "Referenced Collection", "Reference an existing collection");
+  //RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Object_dependency_update");
+
+  prop = RNA_def_property(srna, "referenced_object", PROP_POINTER, PROP_NONE);
+  RNA_def_property_struct_type(prop, "Object");
+  RNA_def_property_pointer_sdna(prop, NULL, "referenced_object");
+  RNA_def_property_flag(prop, PROP_EDITABLE);
+  //RNA_def_property_pointer_funcs(prop, NULL, "rna_Collection_referenced_object_set", NULL, NULL);
+  RNA_def_property_ui_text(prop, "Referenced Object", "Reference an existing object");
+  // RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Object_dependency_update");
+
   prop = RNA_def_property(srna, "location", PROP_FLOAT, PROP_TRANSLATION);
   RNA_def_property_float_sdna(prop, NULL, "loc");
   RNA_def_property_editable_array_func(prop, "rna_Collection_location_editable");
