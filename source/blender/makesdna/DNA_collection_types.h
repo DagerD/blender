@@ -38,6 +38,11 @@ enum eCollectionLineArt_Usage {
   COLLECTION_LRT_NO_INTERSECTION = (1 << 3),
 };
 
+enum eCollectionReference_type {
+  COLLECTION_REF_COLLECTION = 0,
+  COLLECTION_REF_OBJECT = (1 << 0),
+};
+
 enum eCollectionLineArt_Flags {
   COLLECTION_LRT_USE_INTERSECTION_MASK = (1 << 0),
   COLLECTION_LRT_USE_INTERSECTION_PRIORITY = (1 << 1),
@@ -87,6 +92,10 @@ typedef struct Collection {
   /* Deprecated */
   struct SceneCollection *collection DNA_DEPRECATED;
   struct ViewLayer *view_layer DNA_DEPRECATED;
+
+  short reference_usage; /* eCollectionReference_type */
+
+  char _pad1[6];
 
   /* rot en drot have to be together! (transform('r' en 's')) */
   float loc[3], dloc[3];

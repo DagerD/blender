@@ -708,6 +708,24 @@ void RNA_def_collections(BlenderRNA *brna)
   RNA_def_property_ui_text(prop, "Collection Color", "Color tag for a collection");
   RNA_def_property_update(prop, NC_SCENE | ND_LAYER_CONTENT, "rna_Collection_color_tag_update");
 
+  static const EnumPropertyItem rna_collection_reference_usage[] = {
+      {COLLECTION_REF_COLLECTION,
+       "COLLECTION",
+       0,
+       "Collection",
+       "Reference collection"},
+      {COLLECTION_REF_OBJECT,
+       "OBJECT",
+       0,
+       "Object",
+       "Reference single object"},
+      {0, NULL, 0, NULL, NULL}};
+
+  prop = RNA_def_property(srna, "reference_usage", PROP_ENUM, PROP_NONE);
+  RNA_def_property_enum_items(prop, rna_collection_reference_usage);
+  RNA_def_property_ui_text(prop, "Object type", "What to reference to this collection");
+  RNA_def_property_update(prop, NC_SCENE, NULL);
+
   prop = RNA_def_property(srna, "location", PROP_FLOAT, PROP_TRANSLATION);
   RNA_def_property_float_sdna(prop, NULL, "loc");
   RNA_def_property_editable_array_func(prop, "rna_Collection_location_editable");

@@ -98,6 +98,132 @@ class COLLECTION_PT_transform(CollectionButtonsPanel, Panel):
         row.use_property_decorate = False
 
 
+class COLLECTION_OP_collection_link_collection(bpy.types.Operator):
+    """Link collection"""
+    bl_idname = "collection_blender_data_link_collection"
+    bl_label = ""
+
+    collection_name: bpy.props.StringProperty(default="")
+
+    def execute(self, context):
+        context.node.collection = bpy.data.collections[self.collection_name]
+        return {"FINISHED"}
+
+
+class COLLECTION_OP_collection_unlink_collection(bpy.types.Operator):
+    """Unlink collection"""
+    bl_idname = "collection_blender_data_unlink_collection"
+    bl_label = ""
+
+    def execute(self, context):
+        context.node.collection = None
+        return {"FINISHED"}
+
+
+class COLLECTION_MT_collection(bpy.types.Menu):
+    bl_idname = "COLLECTION_MT_collection"
+    bl_label = "Object"
+
+    def draw(self, context):
+        layout = self.layout
+        collections = bpy.data.collections
+
+        for coll in collections:
+            if coll.name == "USD NodeTree":
+                continue
+
+            row = layout.row()
+            op = row.operator(COLLECTION_OP_collection_link_collection.bl_idname,
+                              text=coll.name)
+            op.collection_name = coll.name
+
+
+class COLLECTION_OP_collection_link_object(bpy.types.Operator):
+    """Link object"""
+    bl_idname = "collection_blender_data_link_object"
+    bl_label = ""
+
+    object_name: bpy.props.StringProperty(default="")
+
+    def execute(self, context):
+        context.node.object = bpy.data.objects[self.object_name]
+        return {"FINISHED"}
+
+
+class COLLECTION_OP_collection_unlink_object(bpy.types.Operator):
+    """Unlink object"""
+    bl_idname = "collection_blender_data_unlink_object"
+    bl_label = ""
+
+    def execute(self, context):
+        context.node.object = None
+        return {"FINISHED"}
+
+
+class COLLECTION_MT_collection_object(bpy.types.Menu):
+    bl_idname = "COLLECTION_MT_collection_object"
+    bl_label = "Object"
+
+    def draw(self, context):
+        layout = self.layout
+        objects = bpy.data.objects
+
+        for obj in objects:
+            # if (obj.type == 'CAMERA' and obj.name == USD_CAMERA) or obj.hdusd.is_usd or obj.type not in SUPPORTED_TYPES:
+            #     continue
+
+            row = layout.row()
+            op = row.operator(COLLECTION_OP_collection_link_object.bl_idname,
+                              text=obj.name)
+            op.object_name = obj.name
+
+
+class COLLECTION_PT_reference(CollectionButtonsPanel, Panel):
+    bl_label = "Reference"
+
+    data: bpy.props.EnumProperty(
+        name="Data",
+        description="Blender Data to reference",
+        items=(
+               ('COLLECTION', "Collection", "Reference collection"),
+               ('OBJECT', 'Object', "Reference single object"),
+               ),
+        default='COLLECTION',
+    )
+
+    def draw(self, context):
+        if self.data == 'COLLECTION':
+            col = layout.column(align=True)
+            col.prop(self, 'data')
+
+            split = layout.row(align=True).split(factor=0.25)
+            col = split.column()
+            col.label(text="Collection")
+            col = split.column()
+            row = col.row(align=True)
+            if self.collection:
+                row.menu(COLLECTION_MT_collection.bl_idname,
+                         text=self.collection.name, icon='OUTLINER_COLLECTION')
+                row.operator(COLLECTION_OP_collection_unlink_collection.bl_idname, icon='X')
+            else:
+                row.menu(COLLECTION_MT_collection.bl_idname,
+                         text=" ", icon='OUTLINER_COLLECTION')
+
+        else:
+            split = layout.row(align=True).split(factor=0.25)
+            col = split.column()
+            col.label(text="Object")
+            col = split.column()
+            row = col.row(align=True)
+            if self.object:
+                row.menu(COLLECTION_MT_collection_object.bl_idname,
+                         text=self.object.name, icon='OBJECT_DATAMODE')
+                row.operator(COLLECTION_OP_collection_unlink_object.bl_idname, icon='X')
+            else:
+                row.menu(COLLECTION_MT_collection_object.bl_idname,
+                         text=" ", icon='OBJECT_DATAMODE')
+
+
 class COLLECTION_PT_lineart_collection(CollectionButtonsPanel, Panel):
     bl_label = "Line Art"
     bl_order = 10
@@ -136,6 +262,13 @@ class COLLECTION_PT_collection_custom_props(CollectionButtonsPanel, PropertyPane
 classes = (
     COLLECTION_MT_context_menu_instance_offset,
     COLLECTION_PT_collection_flags,
+    COLLECTION_OP_collection_unlink_collection,
+    COLLECTION_MT_collection,
+    COLLECTION_OP_collection_link_object,
+    COLLECTION_OP_collection_unlink_object,
+    COLLECTION_MT_collection_object,
+    COLLECTION_OP_collection_link_collection,
+    COLLECTION_PT_reference,
     COLLECTION_PT_instancing,
     COLLECTION_PT_transform,
     COLLECTION_PT_lineart_collection,
