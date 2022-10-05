@@ -1033,6 +1033,7 @@ elseif(WIN32)
             PATTERN "*.pyo" EXCLUDE                 # * any cache *
           )
         endif()
+      endif()
 
       if(WITH_MATERIALX)
         # MaterialX python bindings
