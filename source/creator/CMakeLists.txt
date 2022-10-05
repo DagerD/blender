@@ -1037,24 +1037,29 @@ elseif(WIN32)
 
       if(WITH_MATERIALX)
         # MaterialX python bindings
+
+        file(GLOB _matx_python_files
+          "${LIBDIR}/materialx/python/release/MaterialX/*.py"
+        )
         install(
-          DIRECTORY ${LIBDIR}/materialx/python/debug/MaterialX
-          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+          FILES
+            ${LIBDIR}/materialx/python/Debug/MaterialX/PyMaterialXCore_d.cp310-win_amd64.pyd
+            ${LIBDIR}/materialx/python/Debug/MaterialX/PyMaterialXFormat_d.cp310-win_amd64.pyd
+          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages/MaterialX
           CONFIGURATIONS Debug
-          PATTERN "__pycache__" EXCLUDE           # * any cache *
-          PATTERN "*.pyc" EXCLUDE
-          PATTERN "*.lib" EXCLUDE
-          PATTERN "*.pyo" EXCLUDE
         )
         install(
-          DIRECTORY ${LIBDIR}/materialx/python/release/MaterialX
-          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+          FILES
+            ${LIBDIR}/materialx/python/release/MaterialX/PyMaterialXCore.cp310-win_amd64.pyd
+            ${LIBDIR}/materialx/python/release/MaterialX/PyMaterialXFormat.cp310-win_amd64.pyd
+          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages/MaterialX
           CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
-          PATTERN "__pycache__" EXCLUDE           # * any cache *
-          PATTERN "*.pyc" EXCLUDE
-          PATTERN "*.lib" EXCLUDE
-          PATTERN "*.pyo" EXCLUDE
         )
+        install(
+          FILES ${_matx_python_files}
+          DESTINATION ${TARGETDIR_VER}/python/lib/site-packages/MaterialX
+        )
+        unset(_matx_python_files)
       endif()
 
       if(WINDOWS_PYTHON_DEBUG)
