@@ -135,9 +135,13 @@ class COLLECTION_MT_collection(bpy.types.Menu):
                 continue
 
             row = layout.row()
-            op = row.operator(COLLECTION_OP_collection_link_collection.bl_idname,
-                              text=coll.name)
+            op = row.operator("outliner.collection_reference", text=coll.name)
             op.collection_name = coll.name
+
+            # row = layout.row()
+            # op = row.operator(COLLECTION_OP_collection_link_collection.bl_idname,
+            #                   text=coll.name)
+            # op.collection_name = coll.name
 
 
 class COLLECTION_OP_collection_link_object(bpy.types.Operator):
@@ -205,7 +209,9 @@ class COLLECTION_PT_reference(CollectionButtonsPanel, Panel):
             if collection.referenced_collection:
                 row.menu(COLLECTION_MT_collection.bl_idname, text=collection.referenced_collection.name,
                  icon='OUTLINER_COLLECTION')
-                row.operator(COLLECTION_OP_collection_unlink_collection.bl_idname, icon='X')
+                # row.operator(COLLECTION_OP_collection_unlink_collection.bl_idname, icon='X')
+                op = row.operator("outliner.collection_dereference", icon='X')
+                op.collection_name = coll.name
             else:
                 row.menu(COLLECTION_MT_collection.bl_idname,
                          text=" ", icon='OUTLINER_COLLECTION')

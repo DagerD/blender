@@ -560,6 +560,8 @@ void OUTLINER_OT_collection_hierarchy_delete(struct wmOperatorType *ot);
 void OUTLINER_OT_collection_objects_select(struct wmOperatorType *ot);
 void OUTLINER_OT_collection_objects_deselect(struct wmOperatorType *ot);
 void OUTLINER_OT_collection_link(struct wmOperatorType *ot);
+void OUTLINER_OT_collection_reference(struct wmOperatorType *ot);
+void OUTLINER_OT_collection_dereference(struct wmOperatorType *ot);
 void OUTLINER_OT_collection_instance(struct wmOperatorType *ot);
 void OUTLINER_OT_collection_exclude_set(struct wmOperatorType *ot);
 void OUTLINER_OT_collection_exclude_clear(struct wmOperatorType *ot);

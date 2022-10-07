@@ -75,6 +75,8 @@ void outliner_operatortypes(void)
   WM_operatortype_append(OUTLINER_OT_collection_objects_select);
   WM_operatortype_append(OUTLINER_OT_collection_objects_deselect);
   WM_operatortype_append(OUTLINER_OT_collection_link);
+  WM_operatortype_append(OUTLINER_OT_collection_reference);
+  WM_operatortype_append(OUTLINER_OT_collection_dereference);
   WM_operatortype_append(OUTLINER_OT_collection_instance);
   WM_operatortype_append(OUTLINER_OT_collection_exclude_set);
   WM_operatortype_append(OUTLINER_OT_collection_exclude_clear);
