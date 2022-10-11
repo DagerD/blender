@@ -122,8 +122,8 @@ class COLLECTION_OP_collection_unlink_collection(bpy.types.Operator):
         return {"FINISHED"}
 
 
-class COLLECTION_MT_collection(bpy.types.Menu):
-    bl_idname = "COLLECTION_MT_collection"
+class COLLECTION_MT_collection_collection(bpy.types.Menu):
+    bl_idname = "COLLECTION_MT_collection_collection"
     bl_label = "Collection"
 
     def draw(self, context):
@@ -135,7 +135,7 @@ class COLLECTION_MT_collection(bpy.types.Menu):
                 continue
 
             row = layout.row()
-            op = row.operator("outliner.collection_reference", text=coll.name)
+            op = row.operator("outliner.collection_reference_collection", text=coll.name)
             op.collection_name = coll.name
 
             # row = layout.row()
@@ -174,13 +174,13 @@ class COLLECTION_MT_collection_object(bpy.types.Menu):
         layout = self.layout
         objects = bpy.data.objects
 
-        for obj in objects:
-            # if (obj.type == 'CAMERA' and obj.name == USD_CAMERA) or obj.hdusd.is_usd or obj.type not in SUPPORTED_TYPES:
-            #     continue
+        all_objects = list(context.collection.all_objects)
 
-            row = layout.row()
-            op = row.operator(COLLECTION_OP_collection_link_object.bl_idname, text=obj.name)
-            op.object_name = obj.name
+        for obj in objects:
+            if obj not in all_objects:
+                row = layout.row()
+                op = row.operator("outliner.collection_reference_object", text=obj.name)
+                op.object_name = obj.name
 
 
 class COLLECTION_PT_reference(CollectionButtonsPanel, Panel):
@@ -207,13 +207,12 @@ class COLLECTION_PT_reference(CollectionButtonsPanel, Panel):
             row = col.row(align=True)
 
             if collection.referenced_collection:
-                row.menu(COLLECTION_MT_collection.bl_idname, text=collection.referenced_collection.name,
+                row.menu(COLLECTION_MT_collection_collection.bl_idname, text=collection.referenced_collection.name,
                  icon='OUTLINER_COLLECTION')
-                # row.operator(COLLECTION_OP_collection_unlink_collection.bl_idname, icon='X')
                 op = row.operator("outliner.collection_dereference", icon='X')
-                op.collection_name = coll.name
+                op.collection_name = collection.referenced_collection.name
             else:
-                row.menu(COLLECTION_MT_collection.bl_idname,
+                row.menu(COLLECTION_MT_collection_collection.bl_idname,
                          text=" ", icon='OUTLINER_COLLECTION')
 
         else:
@@ -226,7 +225,8 @@ class COLLECTION_PT_reference(CollectionButtonsPanel, Panel):
             if collection.referenced_object:
                 row.menu(COLLECTION_MT_collection_object.bl_idname, text=collection.referenced_object.name,
                          icon='OBJECT_DATAMODE')
-                row.operator(COLLECTION_OP_collection_unlink_object.bl_idname, icon='X')
+                op = row.operator("outliner.collection_dereference_object", icon='X')
+                op.object_name = collection.referenced_object.name
             else:
                 row.menu(COLLECTION_MT_collection_object.bl_idname, text=" ", icon='OBJECT_DATAMODE')
 
@@ -270,7 +270,7 @@ classes = (
     COLLECTION_MT_context_menu_instance_offset,
     COLLECTION_PT_collection_flags,
     COLLECTION_OP_collection_unlink_collection,
-    COLLECTION_MT_collection,
+    COLLECTION_MT_collection_collection,
     COLLECTION_OP_collection_link_object,
     COLLECTION_OP_collection_unlink_object,
     COLLECTION_MT_collection_object,

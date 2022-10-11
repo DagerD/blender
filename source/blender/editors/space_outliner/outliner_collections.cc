@@ -758,7 +758,7 @@ void OUTLINER_OT_collection_link(wmOperatorType *ot)
 /** \name Reference Collection
  * \{ */
 
-static int collection_reference_exec(bContext *C, wmOperator *op)
+static int collection_reference_collection_exec(bContext *C, wmOperator *op)
 {
   Main *bmain = CTX_data_main(C);
   Scene *scene = CTX_data_scene(C);
@@ -777,9 +777,10 @@ static int collection_reference_exec(bContext *C, wmOperator *op)
 
   Collection *referenced_collection;
 
-  LISTBASE_FOREACH (CollectionChild *, collection, &scene->master_collection->children) {
-    if (strcmp(BKE_collection_ui_name_get(collection->collection), referenced_coll_name) == 0) {
-      referenced_collection = collection->collection;
+  LISTBASE_FOREACH (CollectionChild *, collectionChild, &scene->master_collection->children) {
+    if (strcmp(BKE_collection_ui_name_get(collectionChild->collection), referenced_coll_name) ==
+        0) {
+      referenced_collection = collectionChild->collection;
     }
   }
 
@@ -832,15 +833,15 @@ static int collection_reference_exec(bContext *C, wmOperator *op)
   return OPERATOR_FINISHED;
 }
 
-void OUTLINER_OT_collection_reference(wmOperatorType *ot)
+void OUTLINER_OT_collection_reference_collection(wmOperatorType *ot)
 {
   /* identifiers */
   ot->name = "Reference Collection";
-  ot->idname = "OUTLINER_OT_collection_reference";
+  ot->idname = "OUTLINER_OT_collection_reference_collection";
   ot->description = "Reference selected collection";
 
   /* api callbacks */
-  ot->exec = collection_reference_exec;
+  ot->exec = collection_reference_collection_exec;
   ot->poll = ED_operator_scene; // TODO change
 
   /* flags */
@@ -849,6 +850,108 @@ void OUTLINER_OT_collection_reference(wmOperatorType *ot)
   /* properties */
   PropertyRNA *prop = RNA_def_string(
       ot->srna, "collection_name", "", MAX_ID_NAME - 2, "Name", "Collection name");
+  /*PropertyRNA *prop = RNA_def_boolean(
+      ot->srna, "nested", true, "Nested", "Add as child of selected collection");*/
+  // RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+}
+
+static int collection_reference_object_exec(bContext *C, wmOperator *op)
+{
+  Main *bmain = CTX_data_main(C);
+  Scene *scene = CTX_data_scene(C);
+
+  /* Before/after insert handling. */
+  Collection *relative = nullptr;
+  bool relative_after = false;
+  Collection *active_collection = CTX_data_layer_collection(C)->collection;
+
+  if (!active_collection) {
+    return OPERATOR_CANCELLED;
+  }
+
+  const char *referenced_obj_name =
+      (const char *)((IDProperty *)op->properties->data.group.first)->data.pointer;
+
+  Object *referenced_object;
+
+  LISTBASE_FOREACH (CollectionChild *, collectionChild, &scene->master_collection->children) {
+    LISTBASE_FOREACH (CollectionObject *, collectionObject, &collectionChild->collection->gobject) {
+      printf("%s\n", collectionObject->ob->id.name);
+      if (strcmp(collectionObject->ob->id.name + 2, referenced_obj_name) == 0) {
+        referenced_object = collectionObject->ob;
+      }
+    }
+  }
+
+  if (referenced_object == nullptr) {
+    return OPERATOR_CANCELLED;
+  }
+
+  BKE_collection_object_add(bmain, active_collection, referenced_object);
+
+  active_collection->referenced_object = referenced_object;
+
+  // if (BKE_collection_is_empty(active_collection)) {
+  //  TREESTORE(data.te)->flag &= ~TSE_CLOSED;
+  //}
+
+  // LISTBASE_FOREACH (wmDragID *, drag_id, &drag->ids) {
+  //  /* Ctrl enables linking, so we don't need a from collection then. */
+  //  Collection *from = (event->modifier & KM_CTRL) ?
+  //                         nullptr :
+  //                         collection_parent_from_ID(drag_id->from_parent);
+
+  //  if (GS(drag_id->id->name) == ID_OB) {
+  //    /* Move/link object into collection. */
+  //    Object *object = (Object *)drag_id->id;
+
+  //    if (from) {
+  //      BKE_collection_object_move(bmain, scene, data.to, from, object);
+  //    }
+  //    else {
+  //      BKE_collection_object_add(bmain, data.to, object);
+  //    }
+  //  }
+  //  else if (GS(drag_id->id->name) == ID_GR) {
+  //    /* Move/link collection into collection. */
+  //    Collection *collection = (Collection *)drag_id->id;
+
+  //    if (collection != from) {
+  //      BKE_collection_move(bmain, data.to, from, relative, relative_after, collection);
+  //      ;
+  //    }
+  //  }
+
+  //  if (from) {
+  //    DEG_id_tag_update(&from->id, ID_RECALC_COPY_ON_WRITE | ID_RECALC_GEOMETRY);
+  //  }
+  //}
+
+  /* Update dependency graph. */
+  // DEG_id_tag_update(&data.to->id, ID_RECALC_COPY_ON_WRITE);
+  DEG_relations_tag_update(bmain);
+  WM_event_add_notifier(C, NC_SCENE | ND_LAYER, scene);
+
+  return OPERATOR_FINISHED;
+}
+
+void OUTLINER_OT_collection_reference_object(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Reference Collection";
+  ot->idname = "OUTLINER_OT_collection_reference_object";
+  ot->description = "Reference selected object";
+
+  /* api callbacks */
+  ot->exec = collection_reference_object_exec;
+  ot->poll = ED_operator_scene;  // TODO change
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* properties */
+  PropertyRNA *prop = RNA_def_string(
+      ot->srna, "object_name", "", MAX_ID_NAME - 2, "Name", "Object name");
   /*PropertyRNA *prop = RNA_def_boolean(
       ot->srna, "nested", true, "Nested", "Add as child of selected collection");*/
   // RNA_def_property_flag(prop, PROP_SKIP_SAVE);
@@ -885,20 +988,27 @@ static void unlink_collection_fn(bContext *C,
   Collection *collection = (Collection *)tselem->id;
   Collection *referenced_collection = collection->referenced_collection;
 
-  Collection *parent = (Collection *)tsep->id;
   id_fake_user_set(&collection->id);
   BKE_collection_child_remove(bmain, collection, referenced_collection);
   DEG_id_tag_update(&collection->id, ID_RECALC_COPY_ON_WRITE);
   DEG_relations_tag_update(bmain);
+}
 
-    /*
-    if (GS(tsep->id->name) == ID_OB) {
-      Object *ob = (Object *)tsep->id;
-      ob->instance_collection = nullptr;
-      DEG_id_tag_update(&ob->id, ID_RECALC_TRANSFORM);
-      DEG_relations_tag_update(bmain);
-    }
-    */
+static void unlink_object_fn(bContext *C,
+                                 ReportList *UNUSED(reports),
+                                 Scene *UNUSED(scene),
+                                 TreeElement *UNUSED(te),
+                                 TreeStoreElem *tsep,
+                                 TreeStoreElem *tselem,
+                                 void *UNUSED(user_data))
+{
+  Main *bmain = CTX_data_main(C);
+  Collection *collection = (Collection *)tselem->id;
+  Object *referenced_object = collection->referenced_object;
+
+  BKE_collection_object_remove(bmain, collection, referenced_object, true);
+  DEG_id_tag_update(&collection->id, ID_RECALC_COPY_ON_WRITE);
+  DEG_relations_tag_update(bmain);
 }
 
 /** \} */
@@ -930,14 +1040,31 @@ static int collection_dereference_exec(bContext *C, wmOperator *op)
     }
   }
 
-  if (!space_outliner) {
+  if (space_outliner == nullptr) {
     return OPERATOR_CANCELLED;
   }
 
-  outliner_do_libdata_operation(
-      C, op->reports, scene, space_outliner, unlink_collection_fn, nullptr);
+  //const char *referenced_obj_name =
+  //    (const char *)((IDProperty *)op->properties->data.group.first)->data.pointer;
 
-  active_collection->referenced_collection = nullptr;
+  const char *prop_name = ((IDProperty *)op->properties->data.group.first)->name;
+
+  if (strcmp(prop_name, "collection_name") == 0) {
+    outliner_do_libdata_operation(
+        C, op->reports, scene, space_outliner, unlink_collection_fn, nullptr);
+
+    active_collection->referenced_collection = nullptr;
+
+    ED_undo_push(C, "Dereference Collection");
+  }
+  else if (strcmp(prop_name, "object_name") == 0) {
+    outliner_do_libdata_operation(
+        C, op->reports, scene, space_outliner, unlink_object_fn, nullptr);
+
+    active_collection->referenced_object = nullptr;
+
+    ED_undo_push(C, "Dereference Object");
+  }
 
   WM_event_add_notifier(C, NC_SCENE | ND_LAYER, nullptr);
 
@@ -965,8 +1092,30 @@ void OUTLINER_OT_collection_dereference(wmOperatorType *ot)
   ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
   /* properties */
-  PropertyRNA *prop = RNA_def_string(
+  PropertyRNA *prop_coll = RNA_def_string(
       ot->srna, "collection_name", "", MAX_ID_NAME - 2, "Name", "Collection name");
+  /*PropertyRNA *prop = RNA_def_boolean(
+      ot->srna, "nested", true, "Nested", "Add as child of selected collection");*/
+  // RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+}
+
+void OUTLINER_OT_collection_dereference_object(wmOperatorType *ot)
+{
+  /* identifiers */
+  ot->name = "Dereference Object";
+  ot->idname = "OUTLINER_OT_collection_dereference_object";
+  ot->description = "dereference selected object";
+
+  /* api callbacks */
+  ot->exec = collection_dereference_exec;
+  ot->poll = ED_operator_scene;  // TODO change
+
+  /* flags */
+  ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+  /* properties */
+  PropertyRNA *prop_obj = RNA_def_string(
+      ot->srna, "object_name", "", MAX_ID_NAME - 2, "Name", "Object name");
   /*PropertyRNA *prop = RNA_def_boolean(
       ot->srna, "nested", true, "Nested", "Add as child of selected collection");*/
   // RNA_def_property_flag(prop, PROP_SKIP_SAVE);
