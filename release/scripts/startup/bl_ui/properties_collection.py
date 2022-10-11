@@ -75,7 +75,7 @@ class COLLECTION_PT_instancing(CollectionButtonsPanel, Panel):
         row.menu("COLLECTION_MT_context_menu_instance_offset", icon='DOWNARROW_HLT', text="")
 
 
-class COLLECTION_PT_transform(CollectionButtonsPanel, Panel):
+class COLLECTION_PT_collection_transform(CollectionButtonsPanel, Panel):
     bl_label = "Transform"
 
     def draw(self, context):
@@ -100,30 +100,8 @@ class COLLECTION_PT_transform(CollectionButtonsPanel, Panel):
         row.use_property_decorate = False
 
 
-class COLLECTION_OP_collection_link_collection(bpy.types.Operator):
-    """Link collection"""
-    bl_idname = "collection.collection_blender_data_link_collection"
-    bl_label = ""
-
-    collection_name: bpy.props.StringProperty(default="")
-
-    def execute(self, context):
-        context.collection.referenced_collection = bpy.data.collections[self.collection_name]
-        return {"FINISHED"}
-
-
-class COLLECTION_OP_collection_unlink_collection(bpy.types.Operator):
-    """Unlink collection"""
-    bl_idname = "collection.collection_blender_data_unlink_collection"
-    bl_label = ""
-
-    def execute(self, context):
-        context.collection.referenced_collection = None
-        return {"FINISHED"}
-
-
-class COLLECTION_MT_collection_collection(bpy.types.Menu):
-    bl_idname = "COLLECTION_MT_collection_collection"
+class COLLECTION_MT_collection_reference_collection(bpy.types.Menu):
+    bl_idname = "COLLECTION_MT_collection_reference_collection"
     bl_label = "Collection"
 
     def draw(self, context):
@@ -138,36 +116,9 @@ class COLLECTION_MT_collection_collection(bpy.types.Menu):
             op = row.operator("outliner.collection_reference_collection", text=coll.name)
             op.collection_name = coll.name
 
-            # row = layout.row()
-            # op = row.operator(COLLECTION_OP_collection_link_collection.bl_idname,
-            #                   text=coll.name)
-            # op.collection_name = coll.name
 
-
-class COLLECTION_OP_collection_link_object(bpy.types.Operator):
-    """Link object"""
-    bl_idname = "collection.collection_blender_data_link_object"
-    bl_label = ""
-
-    object_name: bpy.props.StringProperty(default="")
-
-    def execute(self, context):
-        context.collection.referenced_object = bpy.data.objects[self.object_name]
-        return {"FINISHED"}
-
-
-class COLLECTION_OP_collection_unlink_object(bpy.types.Operator):
-    """Unlink object"""
-    bl_idname = "collection.collection_blender_data_unlink_object"
-    bl_label = ""
-
-    def execute(self, context):
-        context.collection.referenced_object = None
-        return {"FINISHED"}
-
-
-class COLLECTION_MT_collection_object(bpy.types.Menu):
-    bl_idname = "COLLECTION_MT_collection_object"
+class COLLECTION_MT_collection_reference_object(bpy.types.Menu):
+    bl_idname = "COLLECTION_MT_collection_reference_object"
     bl_label = "Object"
 
     def draw(self, context):
@@ -183,7 +134,7 @@ class COLLECTION_MT_collection_object(bpy.types.Menu):
                 op.object_name = obj.name
 
 
-class COLLECTION_PT_reference(CollectionButtonsPanel, Panel):
+class COLLECTION_PT_collection_reference(CollectionButtonsPanel, Panel):
     bl_label = "Reference"
 
     collection: bpy.props.PointerProperty(
@@ -207,13 +158,12 @@ class COLLECTION_PT_reference(CollectionButtonsPanel, Panel):
             row = col.row(align=True)
 
             if collection.referenced_collection:
-                row.menu(COLLECTION_MT_collection_collection.bl_idname, text=collection.referenced_collection.name,
-                 icon='OUTLINER_COLLECTION')
-                op = row.operator("outliner.collection_dereference", icon='X')
+                row.menu(COLLECTION_MT_collection_reference_collection.bl_idname, text=collection.referenced_collection.name,
+                         icon='OUTLINER_COLLECTION')
+                op = row.operator("outliner.collection_dereference_collection", icon='X')
                 op.collection_name = collection.referenced_collection.name
             else:
-                row.menu(COLLECTION_MT_collection_collection.bl_idname,
-                         text=" ", icon='OUTLINER_COLLECTION')
+                row.menu(COLLECTION_MT_collection_reference_collection.bl_idname, text=" ", icon='OUTLINER_COLLECTION')
 
         else:
             split = layout.row(align=True).split(factor=0.25)
@@ -223,12 +173,12 @@ class COLLECTION_PT_reference(CollectionButtonsPanel, Panel):
             row = col.row(align=True)
 
             if collection.referenced_object:
-                row.menu(COLLECTION_MT_collection_object.bl_idname, text=collection.referenced_object.name,
+                row.menu(COLLECTION_MT_collection_reference_object.bl_idname, text=collection.referenced_object.name,
                          icon='OBJECT_DATAMODE')
                 op = row.operator("outliner.collection_dereference_object", icon='X')
                 op.object_name = collection.referenced_object.name
             else:
-                row.menu(COLLECTION_MT_collection_object.bl_idname, text=" ", icon='OBJECT_DATAMODE')
+                row.menu(COLLECTION_MT_collection_reference_object.bl_idname, text=" ", icon='OBJECT_DATAMODE')
 
 
 class COLLECTION_PT_lineart_collection(CollectionButtonsPanel, Panel):
@@ -269,15 +219,11 @@ class COLLECTION_PT_collection_custom_props(CollectionButtonsPanel, PropertyPane
 classes = (
     COLLECTION_MT_context_menu_instance_offset,
     COLLECTION_PT_collection_flags,
-    COLLECTION_OP_collection_unlink_collection,
-    COLLECTION_MT_collection_collection,
-    COLLECTION_OP_collection_link_object,
-    COLLECTION_OP_collection_unlink_object,
-    COLLECTION_MT_collection_object,
-    COLLECTION_OP_collection_link_collection,
-    COLLECTION_PT_reference,
+    COLLECTION_PT_collection_transform,
+    COLLECTION_PT_collection_reference,
+    COLLECTION_MT_collection_reference_object,
+    COLLECTION_MT_collection_reference_collection,
     COLLECTION_PT_instancing,
-    COLLECTION_PT_transform,
     COLLECTION_PT_lineart_collection,
     COLLECTION_PT_collection_custom_props,
 )
