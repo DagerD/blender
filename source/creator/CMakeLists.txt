@@ -390,12 +390,10 @@ if(WITH_PYTHON)
     PATTERN "${ADDON_EXCLUDE_CONDITIONAL}" EXCLUDE
     PATTERN "${FREESTYLE_EXCLUDE_CONDITIONAL}" EXCLUDE
   )
-  if(WIN32)
-    install(
-      FILES ${CMAKE_SOURCE_DIR}/release/windows/python/usercustomize.py
-      DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
-    )
-  endif()
+  install(
+    FILES ${CMAKE_SOURCE_DIR}/release/scripts/site/usercustomize.py
+    DESTINATION ${TARGETDIR_VER}/python/lib/site-packages
+  )
   unset(ADDON_EXCLUDE_CONDITIONAL)
   unset(FREESTYLE_EXCLUDE_CONDITIONAL)
 endif()
@@ -1412,7 +1410,8 @@ endif()
 if(WITH_MATERIALX)
   install(
     DIRECTORY ${LIBDIR}/materialx/libraries
-    DESTINATION "${TARGETDIR_VER}/datafiles/materialx"
+    # DESTINATION "${TARGETDIR_VER}/materialx"
+    DESTINATION "./blender.shared/materialx"
   )
 endif()
 
