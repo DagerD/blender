@@ -8,9 +8,8 @@ using namespace pxr;
 
 namespace usdhydra {
 
-GfCamera SceneExport::gfCamera()
+GfCamera SceneExport::gfCamera(BL::Object &b_cameraObj)
 {
-  BL::Object b_cameraObj = b_scene.camera();
   BL::Camera &b_camera = (BL::Camera &)b_cameraObj.data();
   auto res = resolution();
   float ratio = (float)res.first / res.second;
@@ -20,9 +19,15 @@ GfCamera SceneExport::gfCamera()
   gfCamera.SetHorizontalAperture(b_camera.sensor_width());
   gfCamera.SetVerticalAperture(b_camera.sensor_width() / ratio);
   gfCamera.SetFocalLength(b_camera.lens());
-  gfCamera.SetTransform(ObjectExport(b_cameraObj,b_depsgraph).transform());
+  gfCamera.SetTransform(ObjectExport(b_cameraObj, b_depsgraph).transform());
 
   return gfCamera;
+}
+
+GfCamera SceneExport::gfCamera()
+{
+  BL::Object b_cameraObj = b_scene.camera();
+  return gfCamera(b_cameraObj);
 }
 
 std::pair<int,int> SceneExport::resolution()

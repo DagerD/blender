@@ -10,7 +10,7 @@
 
 #include "glog/logging.h"
 
-#include "engine.h"
+#include "finalEngine.h"
 #include "utils.h"
 #include "sceneDelegate/scene.h"
 
@@ -32,77 +32,15 @@ void FinalEngine::sync(BL::Depsgraph &b_depsgraph, BL::Context &b_context, pxr::
 
 void FinalEngine::render(BL::Depsgraph &b_depsgraph)
 {
-  if (b_engine.bl_use_gpu_context()) {
-    renderGL(b_depsgraph);
-  }
-  else {
-    renderLite(b_depsgraph);
-  }
-}
-
-void FinalEngine::renderGL(BL::Depsgraph &b_depsgraph)
-{
-  // TODO implement with BlenderSceneDelegate
-  return;
-
-  std::unique_ptr<UsdImagingGLEngine> imagingGLEngine = std::make_unique<UsdImagingGLEngine>();
-
-  if (!imagingGLEngine->SetRendererPlugin(TfToken(delegateId))) {
-    DLOG(ERROR) << "Error in SetRendererPlugin(" << delegateId << ")";
-    return;
-  }
-
-  for (auto const& setting : renderSettings) {
-    imagingGLEngine->SetRendererSetting(setting.first, setting.second);
-  }
-
-  BL::Scene b_scene = b_depsgraph.scene_eval();
-  
-  int width, height;
-  getResolution(b_scene.render(), width, height);
-
-  UsdGeomCamera usdCamera = UsdAppUtilsGetCameraAtPath(stage, SdfPath(TfMakeValidIdentifier(b_scene.camera().data().name())));
-  GfCamera gfCamera = usdCamera.GetCamera(UsdTimeCode(b_scene.frame_current()));
-
-  GlfDrawTargetRefPtr drawTarget = GlfDrawTarget::New(GfVec2i(width, height));
-  drawTarget->Bind();
-  drawTarget->AddAttachment("color", GL_RGBA, GL_FLOAT, GL_RGBA);
-
-  imagingGLEngine->SetRenderViewport(GfVec4d(0, 0, width, height));
-  imagingGLEngine->SetRendererAov(HdAovTokens->color);
-
-  imagingGLEngine->SetCameraState(gfCamera.GetFrustum().ComputeViewMatrix(),
-                                  gfCamera.GetFrustum().ComputeProjectionMatrix());
-
-  UsdImagingGLRenderParams renderParams;
-  renderParams.frame = UsdTimeCode(b_scene.frame_current());
-  renderParams.clearColor = GfVec4f(1.0, 1.0, 1.0, 0.0);
-
-  imagingGLEngine->Render(stage->GetPseudoRoot(), renderParams);
-
-  map<string, vector<float>> renderImages{{"Combined", vector<float>(width * height * 4)}};   // 4 - number of channels
-  vector<float> &pixels = renderImages["Combined"];
-
-  glReadPixels(0, 0, width, height, GL_RGBA, GL_FLOAT, pixels.data());
-  drawTarget->Unbind();
-  
-  updateRenderResult(renderImages, b_depsgraph.view_layer().name(), width, height);
-}
-
-void FinalEngine::renderLite(BL::Depsgraph &b_depsgraph)
-{
   SceneExport sceneExport(b_depsgraph);
   auto resolution = sceneExport.resolution();
   int width = resolution.first, height = resolution.second;
 
   GfCamera gfCamera = sceneExport.gfCamera();
   freeCameraDelegate->SetCamera(gfCamera);
-  renderTaskDelegate->SetCameraViewport(freeCameraDelegate->GetCameraId(), width, height);
-
-  TfToken aov = HdAovTokens->color;
-  HdAovDescriptor aovDesc = renderDelegate->GetDefaultAovDescriptor(aov);
-  renderTaskDelegate->SetRendererAov(aov, aovDesc);
-
+  renderTaskDelegate->SetCameraAndViewport(freeCameraDelegate->GetCameraId(), GfVec4d(0, 0, width, height));
+  renderTaskDelegate->SetRendererAov(HdAovTokens->color);
+  
   HdTaskSharedPtrVector tasks = renderTaskDelegate->GetTasks();
 
   chrono::time_point<chrono::steady_clock> timeBegin = chrono::steady_clock::now(), timeCurrent;
@@ -125,7 +63,7 @@ void FinalEngine::renderLite(BL::Depsgraph &b_depsgraph)
       break;
     }
 
-    percentDone = getRendererPercentDone(*renderDelegate);
+    percentDone = getRendererPercentDone();
     timeCurrent = chrono::steady_clock::now();
     elapsedTime = chrono::duration_cast<chrono::milliseconds>(timeCurrent - timeBegin);
 
@@ -136,11 +74,11 @@ void FinalEngine::renderLite(BL::Depsgraph &b_depsgraph)
       break;
     }
 
-    renderTaskDelegate->GetRendererAov(HdAovTokens->color, pixels.data());
+    renderTaskDelegate->GetRendererAovData(HdAovTokens->color, pixels.data());
     updateRenderResult(renderImages, layerName, width, height);
   }
 
-  renderTaskDelegate->GetRendererAov(HdAovTokens->color, pixels.data());
+  renderTaskDelegate->GetRendererAovData(HdAovTokens->color, pixels.data());
   updateRenderResult(renderImages, layerName, width, height);
 }
 

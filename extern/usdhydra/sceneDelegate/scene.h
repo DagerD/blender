@@ -18,6 +18,7 @@ public:
     , b_scene(b_depsgraph.scene())
   {}
   pxr::GfCamera gfCamera();
+  pxr::GfCamera gfCamera(BL::Object &cameraObj);
   std::pair<int, int> resolution();
   std::string sceneName();
   std::string layerName();

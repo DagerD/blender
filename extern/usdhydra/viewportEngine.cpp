@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: Apache-2.0
  * Copyright 2011-2022 Blender Foundation */
 
+#include <epoxy/gl.h>
+
 #include <pxr/base/gf/camera.h>
 #include <pxr/imaging/glf/drawTarget.h>
 #include <pxr/usd/usdGeom/camera.h>
@@ -9,7 +11,7 @@
 
 #include "glog/logging.h"
 
-#include "engine.h"
+#include "viewportEngine.h"
 #include "utils.h"
 
 using namespace std;
@@ -419,37 +421,138 @@ int ViewSettings::get_height()
   return border[1][1];
 }
 
-pxr::GfCamera ViewSettings::export_camera()
+GfCamera ViewSettings::export_camera()
 {
   float tile[4] = {(float)border[0][0] / screen_width, (float)border[0][1] / screen_height,
                    (float)border[1][0] / screen_width, (float)border[1][1] / screen_height};
   return camera_data.export_gf(tile);
 }
 
-void ViewportEngine::sync(BL::Depsgraph &b_depsgraph, BL::Context &b_context, pxr::HdRenderSettingsMap &renderSettings_)
+GLTexture::GLTexture()
+  : textureId(0)
+  , width(0)
+  , height(0)
+  , channels(4)
 {
-  // TODO implement with BlenderSceneDelegate
-  return;
+}
 
-  renderSettings = renderSettings_;
-  if (!imagingGLEngine) {
-    stage = UsdStage::CreateInMemory();
-    exportScene(b_depsgraph, b_context);
+GLTexture::~GLTexture()
+{
+  if (textureId) {
+    free();
+  }
+}
 
-    imagingGLEngine = std::make_unique<UsdImagingGLEngine>();
-    imagingGLEngine->SetRendererPlugin(TfToken(delegateId));
+void GLTexture::setBuffer(pxr::HdRenderBuffer *buffer)
+{
+  if (!textureId) {
+    create(buffer);
+    return;
   }
 
-  for (auto const& pair : renderSettings) {
-    imagingGLEngine->SetRendererSetting(pair.first, pair.second);
+  if (width != buffer->GetWidth() || height != buffer->GetHeight()) {
+    free();
+    create(buffer);
+    return;
+  }
+
+  glBindTexture(GL_TEXTURE_2D, textureId);
+    
+  void *data = buffer->Map();
+  glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_FLOAT, data);
+  buffer->Unmap();
+}
+
+void GLTexture::create(pxr::HdRenderBuffer *buffer)
+{
+  width = buffer->GetWidth();
+  height = buffer->GetHeight();
+  channels = HdGetComponentCount(buffer->GetFormat());
+
+  glGenTextures(1, &textureId);
+  glBindTexture(GL_TEXTURE_2D, textureId);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+  
+  void *data = buffer->Map();
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, data);
+  buffer->Unmap();
+}
+
+void GLTexture::free()
+{
+  glDeleteTextures(1, &textureId);
+  textureId = 0;
+}
+
+void GLTexture::draw(GLfloat x, GLfloat y)
+{
+  // INITIALIZATION
+
+  // Getting shader program
+  GLint shader_program;
+  glGetIntegerv(GL_CURRENT_PROGRAM, &shader_program);
+
+  // Generate vertex array
+  GLuint vertex_array;
+  glGenVertexArrays(1, &vertex_array);
+
+  GLint texturecoord_location = glGetAttribLocation(shader_program, "texCoord");
+  GLint position_location = glGetAttribLocation(shader_program, "pos");
+
+  // Generate geometry buffers for drawing textured quad
+  GLfloat position[8] = { x, y, x + width, y, x + width, y + height, x, y + height };
+  GLfloat texcoord[8] = {0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0};
+
+  GLuint vertex_buffer[2];
+  glGenBuffers(2, vertex_buffer);
+  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer[0]);
+  glBufferData(GL_ARRAY_BUFFER, 32, position, GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer[1]);
+  glBufferData(GL_ARRAY_BUFFER, 32, texcoord, GL_STATIC_DRAW);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+  // DRAWING
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, textureId);
+
+  glBindVertexArray(vertex_array);
+  glEnableVertexAttribArray(texturecoord_location);
+  glEnableVertexAttribArray(position_location);
+
+  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer[0]);
+  glVertexAttribPointer(position_location, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+  glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer[1]);
+  glVertexAttribPointer(texturecoord_location, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+  glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+  glBindVertexArray(0);
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  // DELETING
+  glDeleteBuffers(2, vertex_buffer);
+  glDeleteVertexArrays(1, &vertex_array);
+}
+
+void ViewportEngine::sync(BL::Depsgraph &b_depsgraph, BL::Context &b_context, pxr::HdRenderSettingsMap &renderSettings)
+{
+  if (!sceneDelegate) {
+    sceneDelegate = std::make_unique<BlenderSceneDelegate>(renderIndex.get(), 
+      SdfPath::AbsoluteRootPath().AppendElementString("blenderScene"), b_depsgraph);
+  }
+  sceneDelegate->Populate();
+
+  for (auto const& setting : renderSettings) {
+    renderDelegate->SetRenderSetting(setting.first, setting.second);
   }
 }
 
 void ViewportEngine::viewDraw(BL::Depsgraph &b_depsgraph, BL::Context &b_context)
 {
-  // TODO implement with BlenderSceneDelegate
-  return;
-
   ViewSettings viewSettings(b_context);
   if (viewSettings.get_width() * viewSettings.get_height() == 0) {
     return;
@@ -458,50 +561,50 @@ void ViewportEngine::viewDraw(BL::Depsgraph &b_depsgraph, BL::Context &b_context
   BL::Scene b_scene = b_depsgraph.scene_eval();
   GfCamera gfCamera = viewSettings.export_camera();
 
-  vector<GfVec4f> clipPlanes = gfCamera.GetClippingPlanes();
+  freeCameraDelegate->SetCamera(gfCamera);
+  renderTaskDelegate->SetCameraAndViewport(freeCameraDelegate->GetCameraId(), 
+    GfVec4d(viewSettings.border[0][0], viewSettings.border[0][1], viewSettings.border[1][0], viewSettings.border[1][1]));
+  renderTaskDelegate->SetRendererAov(HdAovTokens->color);
+  
+  HdTaskSharedPtrVector tasks = renderTaskDelegate->GetTasks();
 
-  for (int i = 0; i < clipPlanes.size(); i++) {
-    renderParams.clipPlanes.push_back((GfVec4d)clipPlanes[i]);
-  }
-
-  imagingGLEngine->SetCameraState(gfCamera.GetFrustum().ComputeViewMatrix(),
-                                  gfCamera.GetFrustum().ComputeProjectionMatrix());
-  imagingGLEngine->SetRenderViewport(GfVec4d((double)viewSettings.border[0][0], (double)viewSettings.border[0][1],
-                                             (double)viewSettings.border[1][0], (double)viewSettings.border[1][1]));
-
-  b_engine.bind_display_space_shader(b_scene);
-
-  if (getRendererPercentDone(*imagingGLEngine) == 0.0f) {
+  if (getRendererPercentDone() == 0.0f) {
     timeBegin = chrono::steady_clock::now();
   }
 
-  imagingGLEngine->Render(stage->GetPseudoRoot(), renderParams);
+  {
+    // Release the GIL before calling into hydra, in case any hydra plugins call into python.
+    TF_PY_ALLOW_THREADS_IN_SCOPE();
+    _engine.Execute(renderIndex.get(), &tasks);
+  }
+
+  b_engine.bind_display_space_shader(b_scene);
+
+  texture.setBuffer(renderTaskDelegate->GetRendererAov(HdAovTokens->color));
+  texture.draw((GLfloat)viewSettings.border[0][0], (GLfloat)viewSettings.border[0][1]);
 
   b_engine.unbind_display_space_shader();
 
-  glClear(GL_DEPTH_BUFFER_BIT);
+  //glClear(GL_DEPTH_BUFFER_BIT);
 
   chrono::time_point<chrono::steady_clock> timeCurrent = chrono::steady_clock::now();
   chrono::milliseconds elapsedTime = chrono::duration_cast<chrono::milliseconds>(timeCurrent - timeBegin);
 
   string formattedTime = formatDuration(elapsedTime);
 
-  if (!imagingGLEngine->IsConverged()) {
-    notifyStatus("Time: " + formattedTime + " | Done: " + to_string(int(getRendererPercentDone(*imagingGLEngine))) + "%",
-                 "Render", true);
+  if (!renderTaskDelegate->IsConverged()) {
+    notifyStatus("Time: " + formattedTime + " | Done: " + to_string(int(getRendererPercentDone())) + "%",
+                 "Render");
+    b_engine.tag_redraw();
   }
   else {
-    notifyStatus(("Time: " + formattedTime).c_str(), "Rendering Done", false);
+    notifyStatus(("Time: " + formattedTime).c_str(), "Rendering Done");
   }
 }
 
-void ViewportEngine::notifyStatus(const string &info, const string &status, bool redraw)
+void ViewportEngine::notifyStatus(const string &info, const string &status)
 {
   b_engine.update_stats(status.c_str(), info.c_str());
-
-  if (redraw) {
-    b_engine.tag_redraw();
-  }
 }
 
 }   // namespace usdhydra

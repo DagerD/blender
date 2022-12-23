@@ -5,15 +5,13 @@
 #include <pxr/base/plug/plugin.h>
 #include <pxr/base/plug/registry.h>
 #include <pxr/usd/usdGeom/tokens.h>
+#include <pxr/usdImaging/usdImagingGL/engine.h>
 
 #include "glog/logging.h"
 
-#include "intern/usd_hierarchy_iterator.h"
-#include "BKE_context.h"
-#include "BKE_blender_version.h"
-#include "DEG_depsgraph_query.h"
-
 #include "engine.h"
+#include "finalEngine.h"
+#include "viewportEngine.h"
 
 using namespace pxr;
 
@@ -21,7 +19,6 @@ namespace usdhydra {
 
 Engine::Engine(BL::RenderEngine &b_engine, const std::string &delegateId)
   : b_engine(b_engine)
-  , delegateId(delegateId)
 {
   HdRendererPluginRegistry& registry = HdRendererPluginRegistry::GetInstance();
 
@@ -43,38 +40,14 @@ Engine::~Engine()
   renderDelegate = nullptr;
 }
 
-void Engine::exportScene(BL::Depsgraph& b_depsgraph, BL::Context& b_context)
+float Engine::getRendererPercentDone()
 {
-  Depsgraph *depsgraph = (Depsgraph *)b_depsgraph.ptr.data;
-
-  Scene *scene = DEG_get_input_scene(depsgraph);
-  World *world = scene->world;
-
-  DEG_graph_build_for_all_objects(depsgraph);
-
-  bContext *C = (bContext *)b_context.ptr.data;
-  Main *bmain = CTX_data_main(C);
-  USDExportParams usd_export_params;
-
-  usd_export_params.selected_objects_only = false;
-  usd_export_params.visible_objects_only = false;
-
-  //stage->Reload();
-
-  stage->SetMetadata(UsdGeomTokens->upAxis, VtValue(UsdGeomTokens->z));
-  stage->SetMetadata(UsdGeomTokens->metersPerUnit, static_cast<double>(scene->unit.scale_length));
-  stage->GetRootLayer()->SetDocumentation(std::string("Blender v") + BKE_blender_version_string());
-
-  /* Set up the stage for animated data. */
-  //if (data->params.export_animation) {
-  //  stage->SetTimeCodesPerSecond(FPS);
-  //  stage->SetStartTimeCode(scene->r.sfra);
-  //  stage->SetEndTimeCode(scene->r.efra);
-  //}
-
-  blender::io::usd::USDHierarchyIterator iter(bmain, depsgraph, stage, usd_export_params);
-  iter.iterate_and_write();
-  iter.release_writers();
+  VtDictionary render_stats = renderDelegate->GetRenderStats();
+  auto it = render_stats.find("percentDone");
+  if (it == render_stats.end()) {
+    return 0.0;
+  }
+  return (float)it->second.UncheckedGet<double>();
 }
 
 /* ------------------------------------------------------------------------- */

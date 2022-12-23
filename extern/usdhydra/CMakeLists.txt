@@ -27,10 +27,14 @@ set(INC
   ../../source/blender/io/usd
   ../../source/blender/io/common
   ../../source/blender/io/usd/intern
+  ../../source/blender/gpu
+  ../../source/blender/gpu/opengl
+  ../../source/blender/gpu/intern
   ${CMAKE_BINARY_DIR}/source/blender/makesrna/intern
 )
 
 set(INC_SYS
+  ${Epoxy_INCLUDE_DIRS}
   ${PYTHON_INCLUDE_DIRS}
   ${USD_INCLUDE_DIRS}
   ${BOOST_INCLUDE_DIR}
@@ -44,7 +48,9 @@ set(SRC
 
   engine.h
   engine.cpp
+  finalEngine.h
   finalEngine.cpp
+  viewportEngine.h
   viewportEngine.cpp
 
   utils.h
@@ -66,6 +72,7 @@ set(SRC
 )
 
 set(LIB
+  ${Epoxy_LIBRARIES}
   ${PYTHON_LIBRARIES}
   ${BOOST_LIBRARIES}
 )
