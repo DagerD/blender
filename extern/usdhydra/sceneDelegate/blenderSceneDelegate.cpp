@@ -54,17 +54,9 @@ void BlenderSceneDelegate::Populate()
       continue;
     }
     if (obj.type() == BL::Object::type_LIGHT) {
-      Light * light = (Light *)((BL::Light &)obj.data()).ptr.data;
-      TfToken light_type;
+      Light *light = (Light *)((BL::Light &)obj.data()).ptr.data;
+      TfToken light_type = GetLightType(light);
 
-      if (light->type == LA_AREA) {
-        if (auto it = light_shape_types.find(light->area_shape); it != light_shape_types.end())
-          light_type = it->second;
-      }
-      else {
-        if (auto it = light_types.find(light->type); it != light_types.end())
-          light_type = it->second;
-      }
       if (light_type.IsEmpty()) {
         LOG(WARNING) << "Unsupported light type: " << light->id.name + 2;
         continue;
@@ -129,15 +121,27 @@ VtValue BlenderSceneDelegate::GetLightParamValue(SdfPath const& id, TfToken cons
   LOG(INFO) << "GetLightParamValue: " << id.GetAsString() << " [" << key.GetString() << "]";
 
   if (key == HdLightTokens->intensity) {
-    return objectExport(id)->lightExport().energy();
+    return objectExport(id)->lightExport().intensity();
+  }
+
+  if (key == HdLightTokens->width) {
+    return objectExport(id)->lightExport().width();
+  }
+
+  if (key == HdLightTokens->height) {
+    return objectExport(id)->lightExport().height();
   }
 
   if (key == HdLightTokens->radius) {
-    return objectExport(id)->lightExport().spotsize();
+    return objectExport(id)->lightExport().radius();
   }
   
   if (key == HdLightTokens->color) {
     return objectExport(id)->lightExport().color();
+  }  
+
+  if (key == HdLightTokens->angle) {
+    return objectExport(id)->lightExport().angle();
   }
 
   return VtValue();

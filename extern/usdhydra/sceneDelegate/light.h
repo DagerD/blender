@@ -19,13 +19,18 @@ class LightExport
 {
 public:
   LightExport(BL::Light &b_light);
-  pxr::VtValue energy();
-  pxr::VtValue spotsize();
+  pxr::VtValue intensity();
+  pxr::VtValue width();
+  pxr::VtValue height();
+  pxr::VtValue radius();
   pxr::VtValue color();
+  pxr::VtValue angle();
 
 private:
   Light *light;
 };
+
+pxr::TfToken GetLightType(Light *light);
 
 inline std::map<int, pxr::TfToken> light_types {    
     { LA_SUN, pxr::HdPrimTypeTokens->distantLight},
