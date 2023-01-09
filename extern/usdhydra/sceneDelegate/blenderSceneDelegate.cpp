@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: Apache-2.0
  * Copyright 2011-2022 Blender Foundation */
 
+#include <pxr/imaging/hd/light.h>
+
 #include "glog/logging.h"
 
 #include "blenderSceneDelegate.h"
@@ -52,7 +54,23 @@ void BlenderSceneDelegate::Populate()
       continue;
     }
     if (obj.type() == BL::Object::type_LIGHT) {
-      //GetRenderIndex().InsertSprim(HdPrimTypeTokens->sphereLight, this, objId);
+      Light * light = (Light *)((BL::Light &)obj.data()).ptr.data;
+      TfToken light_type;
+
+      if (light->type == LA_AREA) {
+        if (auto it = light_shape_types.find(light->area_shape); it != light_shape_types.end())
+          light_type = it->second;
+      }
+      else {
+        if (auto it = light_types.find(light->type); it != light_types.end())
+          light_type = it->second;
+      }
+      if (light_type.IsEmpty()) {
+        LOG(WARNING) << "Unsupported light type: " << light->id.name + 2;
+        continue;
+      }
+      
+      GetRenderIndex().InsertSprim(light_type, this, objId);
       continue;
     }
   }
@@ -109,6 +127,19 @@ VtValue BlenderSceneDelegate::GetCameraParamValue(SdfPath const& id, TfToken con
 VtValue BlenderSceneDelegate::GetLightParamValue(SdfPath const& id, TfToken const& key)
 {
   LOG(INFO) << "GetLightParamValue: " << id.GetAsString() << " [" << key.GetString() << "]";
+
+  if (key == HdLightTokens->intensity) {
+    return objectExport(id)->lightExport().energy();
+  }
+
+  if (key == HdLightTokens->radius) {
+    return objectExport(id)->lightExport().spotsize();
+  }
+  
+  if (key == HdLightTokens->color) {
+    return objectExport(id)->lightExport().color();
+  }
+
   return VtValue();
 }
 
