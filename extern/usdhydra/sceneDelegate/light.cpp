@@ -82,19 +82,19 @@ VtValue LightExport::treatAsPoint() {
   return VtValue();
 }
 
-TfToken GetLightType(Light *light) {
-  TfToken light_type;
+TfToken getLightType(Light *light) {
+  TfToken lightType;
 
   if (light->type == LA_AREA) {
-    if (auto it = light_shape_types.find(light->area_shape); it != light_shape_types.end())
-      light_type = it->second;
+    if (auto it = LIGHT_SHAPE_TYPES.find(light->area_shape); it != LIGHT_SHAPE_TYPES.end())
+      lightType = it->second;
   }
   else {
-    if (auto it = light_types.find(light->type); it != light_types.end())
-      light_type = it->second;
+    if (auto it = LIGHT_TYPES.find(light->type); it != LIGHT_TYPES.end())
+      lightType = it->second;
   }
 
-  return light_type;
+  return lightType;
 }
 
 } // namespace usdhydra

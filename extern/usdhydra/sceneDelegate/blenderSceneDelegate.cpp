@@ -56,14 +56,14 @@ void BlenderSceneDelegate::Populate()
     }
     if (obj.type() == BL::Object::type_LIGHT) {
       Light *light = (Light *)((BL::Light &)obj.data()).ptr.data;
-      TfToken light_type = GetLightType(light);
+      TfToken lightType = getLightType(light);
 
-      if (light_type.IsEmpty()) {
+      if (lightType.IsEmpty()) {
         LOG(WARNING) << "Unsupported light type: " << light->id.name + 2;
         continue;
       }
       
-      GetRenderIndex().InsertSprim(light_type, this, objId);
+      GetRenderIndex().InsertSprim(lightType, this, objId);
       continue;
     }
   }
