@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <map>
+
 #include <pxr/pxr.h>
 #include <pxr/imaging/hd/camera.h>
 #include <pxr/imaging/hd/sceneDelegate.h>
@@ -35,9 +37,11 @@ public:
 
 private:
   BL::Depsgraph b_depsgraph;
-  bool _isPopulated;
+  bool isPopulated;
 
   std::unique_ptr<ObjectExport> objectExport(SdfPath const& id);
+
+  std::map<SdfPath, std::string> objects;
 };
 
 } // namespace usdhydra
