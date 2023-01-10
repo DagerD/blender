@@ -23,9 +23,11 @@ VtValue LightExport::intensity() {
 VtValue LightExport::width() {
   if (light->area_shape == LA_AREA_SQUARE)
     return VtValue(light->area_size);
-
+  
   if (light->area_shape == LA_AREA_RECT)
     return VtValue(light->area_size);
+  
+  return VtValue();
 }
 
 VtValue LightExport::height() {
@@ -34,6 +36,8 @@ VtValue LightExport::height() {
 
   if (light->area_shape == LA_AREA_RECT)
     return VtValue(light->area_sizey);
+
+  return VtValue();
 }
 
 VtValue LightExport::radius() {
@@ -45,6 +49,8 @@ VtValue LightExport::radius() {
 
   if (light->area_shape == LA_AREA_ELLIPSE)
     return VtValue((light->area_size  + light->area_sizey) / 4); // average of light.size is diameter
+
+  return VtValue();
 }
 
 VtValue LightExport::color() {
@@ -53,6 +59,27 @@ VtValue LightExport::color() {
 
 VtValue LightExport::angle() {
   return VtValue(light->sun_angle * 180.0 / M_PI);
+}
+
+VtValue LightExport::shapingConeAngle() {
+  if (light->type == LA_SPOT)
+    return VtValue(light->spotsize / 2);
+
+  return VtValue();
+}
+
+VtValue LightExport::shapingConeSoftness() {
+  if (light->type == LA_SPOT)
+    return VtValue(light->spotblend);
+
+  return VtValue();
+}
+
+VtValue LightExport::treatAsPoint() {
+  if (light->type == LA_SPOT)
+    return VtValue(1);
+
+  return VtValue();
 }
 
 TfToken GetLightType(Light *light) {

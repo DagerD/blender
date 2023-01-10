@@ -2,6 +2,7 @@
  * Copyright 2011-2022 Blender Foundation */
 
 #include <pxr/imaging/hd/light.h>
+#include <pxr/usd/usdLux/tokens.h>
 
 #include "glog/logging.h"
 
@@ -142,6 +143,18 @@ VtValue BlenderSceneDelegate::GetLightParamValue(SdfPath const& id, TfToken cons
 
   if (key == HdLightTokens->angle) {
     return objectExport(id)->lightExport().angle();
+  }
+
+  if (key == HdLightTokens->shapingConeAngle) {
+    return objectExport(id)->lightExport().shapingConeAngle();
+  }
+
+  if (key == HdLightTokens->shapingConeSoftness) {
+    return objectExport(id)->lightExport().shapingConeSoftness();
+  }
+  
+  if (key == UsdLuxTokens->treatAsPoint) {
+    return objectExport(id)->lightExport().treatAsPoint();
   }
 
   return VtValue();

@@ -25,6 +25,9 @@ public:
   pxr::VtValue radius();
   pxr::VtValue color();
   pxr::VtValue angle();
+  pxr::VtValue shapingConeAngle();
+  pxr::VtValue shapingConeSoftness();
+  pxr::VtValue treatAsPoint();
 
 private:
   Light *light;
