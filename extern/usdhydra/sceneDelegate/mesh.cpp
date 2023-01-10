@@ -48,9 +48,9 @@ VtVec3fArray MeshExport::vertices()
 {
   VtVec3fArray ret;
   ret.reserve(mesh->totvert);
-  blender::Span<MVert> verts = mesh->verts();
-  for (MVert v : verts) {
-    ret.push_back(GfVec3f(v.co));
+  blender::Span<blender::float3> verts = mesh->vert_positions();
+  for (blender::float3 v : verts) {
+    ret.push_back(GfVec3f(v.x, v.y, v.z));
   }
   return ret;
 }

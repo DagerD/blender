@@ -94,8 +94,6 @@ static PyObject *free_func(PyObject * /*self*/, PyObject *args)
 
 static PyObject *sync_func(PyObject * /*self*/, PyObject *args)
 {
-  LOG(INFO) << "sync_func";
-
   PyObject *pyengine, *pydepsgraph, *pycontext, *pysettings;
   if (!PyArg_ParseTuple(args, "OOOO", &pyengine, &pydepsgraph, &pycontext, &pysettings)) {
     Py_RETURN_NONE;
@@ -138,8 +136,6 @@ static PyObject *sync_func(PyObject * /*self*/, PyObject *args)
 
 static PyObject *render_func(PyObject * /*self*/, PyObject *args)
 {
-  LOG(INFO) << "render_func";
-  
   PyObject *pyengine, *pydepsgraph;
   if (!PyArg_ParseTuple(args, "OO", &pyengine, &pydepsgraph)) {
     Py_RETURN_NONE;
@@ -161,8 +157,6 @@ static PyObject *render_func(PyObject * /*self*/, PyObject *args)
 
 static PyObject *view_draw_func(PyObject * /*self*/, PyObject *args)
 {
-  LOG(INFO) << "view_draw_func";
-
   PyObject *pyengine, *pydepsgraph, *pycontext;
   if (!PyArg_ParseTuple(args, "OOO", &pyengine, &pydepsgraph, &pycontext)) {
     Py_RETURN_NONE;
