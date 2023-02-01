@@ -14,6 +14,7 @@ set(INC
   ../../makesrna
   ../../windowmanager
   ../../../../intern/guardedalloc
+  ${LIBDIR}/MaterialX/include
 )
 
 set(INC_SYS

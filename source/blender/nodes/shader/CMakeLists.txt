@@ -21,6 +21,7 @@ set(INC
   ../../../../intern/sky/include
   # RNA_prototypes.h
   ${CMAKE_BINARY_DIR}/source/blender/makesrna
+  ${LIBDIR}/MaterialX/include
 )
 
 
@@ -66,6 +67,7 @@ set(SRC
   nodes/node_shader_light_path.cc
   nodes/node_shader_map_range.cc
   nodes/node_shader_mapping.cc
+  nodes/node_shader_materialx.cc
   nodes/node_shader_math.cc
   nodes/node_shader_mix.cc
   nodes/node_shader_mix_rgb.cc

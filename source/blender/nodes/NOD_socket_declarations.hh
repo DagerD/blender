@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <MaterialXCore/interface.h>
+
 #include "NOD_node_declaration.hh"
 
 #include "RNA_types.h"
@@ -246,6 +248,63 @@ class Custom : public SocketDeclaration {
   bNodeSocket &update_or_build(bNodeTree &ntree, bNode &node, bNodeSocket &socket) const override;
   bool can_connect(const bNodeSocket &socket) const override;
 };
+
+class MaterialXInputBuilder;
+
+class MaterialX : public SocketDeclaration {
+ public:
+  float default_value = 0.0f;
+  float soft_min_value = -FLT_MAX;
+  float soft_max_value = FLT_MAX;
+  PropertySubType subtype = PROP_NONE;
+
+  friend MaterialXInputBuilder;
+
+  using Builder = MaterialXInputBuilder;
+
+  bNodeSocket &build(bNodeTree &ntree, bNode &node) const override;
+  bool matches(const bNodeSocket &socket) const override;
+  bNodeSocket &update_or_build(bNodeTree &ntree, bNode &node, bNodeSocket &socket) const override;
+  bool can_connect(const bNodeSocket &socket) const override;
+};
+
+class MaterialXInputBuilder : public SocketDeclarationBuilder<MaterialX> {
+ public:
+  MaterialXInputBuilder &min(float value);
+  MaterialXInputBuilder &max(float value);
+  MaterialXInputBuilder &default_value(float value);
+  MaterialXInputBuilder &subtype(PropertySubType subtype);
+};
+
+/* -------------------------------------------------------------------- */
+/** \name #MaterialXInputBuilder Inline Methods
+ * \{ */
+
+inline MaterialXInputBuilder &MaterialXInputBuilder::min(const float value)
+{
+  decl_->soft_min_value = value;
+  return *this;
+}
+
+inline MaterialXInputBuilder &MaterialXInputBuilder::max(const float value)
+{
+  decl_->soft_max_value = value;
+  return *this;
+}
+
+inline MaterialXInputBuilder &MaterialXInputBuilder::default_value(const float value)
+{
+  decl_->default_value = value;
+  return *this;
+}
+
+inline MaterialXInputBuilder &MaterialXInputBuilder::subtype(PropertySubType subtype)
+{
+  decl_->subtype = subtype;
+  return *this;
+}
+
+/** \} */
 
 /* -------------------------------------------------------------------- */
 /** \name #FloatBuilder Inline Methods

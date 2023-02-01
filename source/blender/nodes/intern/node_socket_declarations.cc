@@ -658,4 +658,73 @@ bNodeSocket &Custom::update_or_build(bNodeTree & /*ntree*/,
 
 /** \} */
 
+/* -------------------------------------------------------------------- */
+/** \name #MaterialX
+ * \{ */
+
+bNodeSocket &MaterialX::build(bNodeTree &ntree, bNode &node) const
+{
+  bNodeSocket &socket = *nodeAddStaticSocket(&ntree,
+                                             &node,
+                                             this->in_out,
+                                             SOCK_FLOAT,
+                                             this->subtype,
+                                             this->identifier.c_str(),
+                                             this->name.c_str());
+  this->set_common_flags(socket);
+  bNodeSocketValueFloat &value = *(bNodeSocketValueFloat *)socket.default_value;
+  value.min = this->soft_min_value;
+  value.max = this->soft_max_value;
+  value.value = this->default_value;
+  return socket;
+}
+
+bool MaterialX::matches(const bNodeSocket &socket) const
+{
+  if (!this->matches_common_data(socket)) {
+    return false;
+  }
+  if (socket.type != SOCK_FLOAT) {
+    return false;
+  }
+  if (socket.typeinfo->subtype != this->subtype) {
+    return false;
+  }
+  bNodeSocketValueFloat &value = *(bNodeSocketValueFloat *)socket.default_value;
+  if (value.min != this->soft_min_value) {
+    return false;
+  }
+  if (value.max != this->soft_max_value) {
+    return false;
+  }
+  return true;
+}
+
+bool MaterialX::can_connect(const bNodeSocket &socket) const
+{
+  if (!sockets_can_connect(*this, socket)) {
+    return false;
+  }
+  return basic_types_can_connect(*this, socket);
+}
+
+bNodeSocket &MaterialX::update_or_build(bNodeTree &ntree, bNode &node, bNodeSocket &socket) const
+{
+  if (socket.type != SOCK_FLOAT) {
+    BLI_assert(socket.in_out == this->in_out);
+    return this->build(ntree, node);
+  }
+  if (socket.typeinfo->subtype != this->subtype) {
+    modify_subtype_except_for_storage(socket, this->subtype);
+  }
+  this->set_common_flags(socket);
+  bNodeSocketValueFloat &value = *(bNodeSocketValueFloat *)socket.default_value;
+  value.min = this->soft_min_value;
+  value.max = this->soft_max_value;
+  value.subtype = this->subtype;
+  return socket;
+}
+
+/** \} */
+
 }  // namespace blender::nodes::decl

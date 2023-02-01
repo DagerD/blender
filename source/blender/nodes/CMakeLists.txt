@@ -35,6 +35,7 @@ set(INC
   ${CMAKE_CURRENT_BINARY_DIR}/../makesdna/intern
   # RNA_prototypes.h
   ${CMAKE_BINARY_DIR}/source/blender/makesrna
+  ${LIBDIR}/MaterialX/include
 )
 
 
