@@ -13,6 +13,7 @@ set(INC
   ../../../../intern/clog
   ../../../../intern/guardedalloc
   ../../bmesh
+  ${LIBDIR}/MaterialX/include
 )
 
 set(INC_SYS

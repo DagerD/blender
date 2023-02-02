@@ -40,6 +40,7 @@ set(INC
   ../../../intern/ghost
   ../../../intern/guardedalloc
   ../../../intern/mantaflow/extern
+  ${LIBDIR}/MaterialX/include
 )
 
 set(INC_SYS

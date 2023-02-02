@@ -16,6 +16,7 @@ set(INC
   ../../../../intern/clog
   ../../../../intern/guardedalloc
   ../../../../intern/utfconv
+  ${LIBDIR}/MaterialX/include
 )
 
 set(INC_SYS

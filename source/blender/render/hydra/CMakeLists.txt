@@ -30,6 +30,7 @@ set(INC
   ../../gpu/opengl
   ../../gpu/intern
   ${CMAKE_BINARY_DIR}/source/blender/makesrna/intern
+  ${LIBDIR}/MaterialX/include
 )
 
 set(INC_SYS

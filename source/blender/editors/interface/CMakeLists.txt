@@ -24,6 +24,7 @@ set(INC
   ../../bmesh
   # RNA_prototypes.h
   ${CMAKE_BINARY_DIR}/source/blender/makesrna
+  ${LIBDIR}/MaterialX/include
 )
 
 set(INC_SYS

@@ -22,6 +22,7 @@ set(INC
   ../../../intern/guardedalloc
   ../../../intern/mikktspace
   ../../../intern/mantaflow/extern
+  ${LIBDIR}/MaterialX/include
 )
 
 set(INC_SYS

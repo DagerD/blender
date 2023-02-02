@@ -15,6 +15,7 @@ set(INC
 
   # dna_type_offsets.h
   ${CMAKE_CURRENT_BINARY_DIR}/../../makesdna/intern
+  ${LIBDIR}/MaterialX/include
 )
 
 set(INC_SYS

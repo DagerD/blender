@@ -18,6 +18,7 @@ set(INC
   ../../../../extern/fast_float
   ../../../../extern/fmtlib/include
   ../../../../intern/guardedalloc
+  ${LIBDIR}/MaterialX/include
 )
 
 set(INC_SYS

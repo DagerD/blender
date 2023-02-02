@@ -10,6 +10,7 @@ set(INC
   ../../../../intern/atomic
   ../../../../intern/guardedalloc
   ${CMAKE_CURRENT_BINARY_DIR}
+  ${LIBDIR}/MaterialX/include
 )
 
 set(INC_SYS
@@ -123,6 +124,7 @@ set(INC
   ../../blenlib
   ../../../../intern/atomic
   ../../../../intern/guardedalloc
+  ${LIBDIR}/MaterialX/include
 )
 
 set(INC_SYS

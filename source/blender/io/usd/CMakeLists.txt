@@ -52,6 +52,7 @@ set(INC
   ../../windowmanager
   ../../../../intern/guardedalloc
   ../../../../intern/utfconv
+  ${LIBDIR}/MaterialX/include
 )
 
 set(INC_SYS

@@ -33,6 +33,7 @@ set(INC
   ../../ikplugin
   ../../../../intern/iksolver/extern
   ../../bmesh
+  ${LIBDIR}/MaterialX/include
 )
 
 set(INC_SYS

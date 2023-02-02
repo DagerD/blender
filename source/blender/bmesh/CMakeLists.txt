@@ -13,6 +13,7 @@ set(INC
   ../../../intern/eigen
   ../../../intern/guardedalloc
   ../../../extern/rangetree
+  ${LIBDIR}/MaterialX/include
 )
 
 set(INC_SYS

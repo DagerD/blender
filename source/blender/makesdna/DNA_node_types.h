@@ -14,6 +14,9 @@
 
 /** Workaround to forward-declare C++ type in C header. */
 #ifdef __cplusplus
+
+#include <MaterialXCore/Definition.h>
+
 namespace blender {
 template<typename T> class Span;
 class StringRef;
@@ -399,6 +402,7 @@ typedef struct bNode {
   blender::Span<bNode *> direct_children_in_frame() const;
   /** Node tree this node belongs to. */
   const bNodeTree &owner_tree() const;
+  MaterialX::NodeDef *node_def;
 #endif
 } bNode;
 

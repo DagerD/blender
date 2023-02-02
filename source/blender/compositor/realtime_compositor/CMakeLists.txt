@@ -14,6 +14,7 @@ set(INC
   ../../render
   ../../gpu/intern
   ../../../../intern/guardedalloc
+  ${LIBDIR}/MaterialX/include
 )
 
 set(INC_SYS

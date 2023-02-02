@@ -12,6 +12,7 @@ set(INC
   ../../../intern/eigen
   ../../../intern/guardedalloc
   ${CMAKE_BINARY_DIR}/source/blender/makesdna/intern
+  ${LIBDIR}/MaterialX/include
 )
 
 set(SRC
