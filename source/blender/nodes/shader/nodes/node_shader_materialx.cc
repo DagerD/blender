@@ -33,7 +33,7 @@ void register_node_type_sh_materialx()
 
   static bNodeType ntype;
 
-  sh_node_type_base(&ntype, SH_NODE_CAMERA, "MaterialX Test Node", NODE_CLASS_INPUT);
+  sh_node_type_base(&ntype, SH_NODE_MATERIALX, "MaterialX Test Node", NODE_CLASS_SHADER);
   ntype.declare = file_ns::node_declare;
   ntype.gpu_fn = file_ns::gpu_shader_camera;
 
