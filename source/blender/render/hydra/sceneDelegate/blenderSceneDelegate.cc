@@ -318,6 +318,12 @@ void BlenderSceneDelegate::Populate(BL::Depsgraph &b_deps, View3D *v3d)
       add_world(view3d->shading, *world);
       continue;
     }
+
+    if (id.is_a(&RNA_ShaderNodeTree)) {
+      World *world = (World *)b_depsgraph->scene().world().ptr.data;
+      add_world(view3d->shading, *world);
+      continue;
+    }
   }
 
   if (do_update_collection) {

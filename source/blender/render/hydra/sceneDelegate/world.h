@@ -6,6 +6,7 @@
 #include <map>
 
 #include <pxr/base/gf/matrix4d.h>
+#include <pxr/usd/sdf/assetPath.h>
 #include <pxr/usd/sdf/path.h>
 #include <pxr/base/vt/value.h>
 #include "pxr/base/tf/staticTokens.h"
@@ -40,6 +41,7 @@ public:
 
   void set_as_world();
   void set_as_shading();
+  std::string get_image_filepath(const bNode *tex_node);
 };
 
 template<class T>
