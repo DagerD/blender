@@ -50,10 +50,32 @@ void BlenderSceneDelegate::update_material(Material *material)
   }
 }
 
+void BlenderSceneDelegate::add_world(View3DShading &view3DShading, World &world)
+{
+  SdfPath world_light_id = world_id(&view3DShading);
+
+  LOG(INFO) << "Add world: " << world_light_id;
+
+  if (world_data.shading != &view3DShading || world_data.world != &world) {
+    world_data = WorldData(&view3DShading, &world);
+    GetRenderIndex().InsertSprim(HdPrimTypeTokens->domeLight, this, world_light_id);
+  }
+  else {
+    world_data.update_world();
+    GetRenderIndex().GetChangeTracker().MarkSprimDirty(world_light_id, HdLight::AllDirty);
+  }
+}
+
 bool BlenderSceneDelegate::GetVisible(SdfPath const &id)
 {
   ObjectData *obj_data = object_data(id);
-  LOG(INFO) << "GetVisible: " << id.GetAsString() << " " << obj_data->is_visible();
+  LOG(INFO) << "GetVisible: " << id.GetAsString();
+
+  HdRenderIndex &index = GetRenderIndex();
+
+  if (index.GetSprim(HdPrimTypeTokens->domeLight, id)) {
+    return true;
+  }
 
   return obj_data->is_visible();
 }
@@ -207,6 +229,15 @@ SdfPath BlenderSceneDelegate::material_id(Material *material)
   return GetDelegateID().AppendElementString(str);
 }
 
+SdfPath BlenderSceneDelegate::world_id(View3DShading *view3DShading)
+{
+  /* Making id of material in form like M_<pointer in 16 hex digits format>. Example:
+   * W_000002074e812088 */
+  char str[32];
+  snprintf(str, 32, "W_%016llx", (uint64_t)view3DShading);
+  return GetDelegateID().AppendElementString(str);
+}
+
 bool BlenderSceneDelegate::supported_object(Object *object)
 {
   return object->type == OB_MESH ||
@@ -228,6 +259,10 @@ void BlenderSceneDelegate::Populate(BL::Depsgraph &b_deps, View3D *v3d)
   if (!is_populated) {
     /* Export initial objects */
     update_collection();
+
+    World *world = (World *)b_depsgraph->scene().world().ptr.data;
+
+    add_world(view3d->shading, *world);
 
     is_populated = true;
     return;
@@ -275,6 +310,12 @@ void BlenderSceneDelegate::Populate(BL::Depsgraph &b_deps, View3D *v3d)
       if (!update.is_updated_geometry() && !update.is_updated_transform() && !update.is_updated_shading()) {
         do_update_visibility = true;
       }
+      continue;
+    }
+
+    if (id.is_a(&RNA_World)) {
+      World *world = (World *)b_depsgraph->scene().world().ptr.data;
+      add_world(view3d->shading, *world);
       continue;
     }
   }
@@ -397,6 +438,12 @@ GfMatrix4d BlenderSceneDelegate::GetTransform(SdfPath const& id)
 {
   LOG(INFO) << "GetTransform: " << id.GetAsString();
 
+  HdRenderIndex &index = GetRenderIndex();
+
+  if (index.GetSprim(HdPrimTypeTokens->domeLight, id)) {
+    return GfMatrix4d().SetIdentity();
+  }
+
   return objects[id].transform();
 }
 
@@ -404,14 +451,25 @@ VtValue BlenderSceneDelegate::GetLightParamValue(SdfPath const& id, TfToken cons
 {
   LOG(INFO) << "GetLightParamValue: " << id.GetAsString() << " [" << key.GetString() << "]";
   VtValue ret;
-  ObjectData *obj_data = object_data(id);
-  if (obj_data) {
-    if (obj_data->has_data(key)) {
-      ret = obj_data->get_data(key);
+
+  HdRenderIndex &index = GetRenderIndex();
+
+  if (index.GetSprim(HdPrimTypeTokens->domeLight, id)) {
+    if (world_data.has_data(key)) {
+      ret = world_data.get_data(key);
     }
-    else if (key == HdLightTokens->exposure) {
-      // TODO: temporary value, it should be delivered through Python UI
-      ret = 1.0f;
+  }
+  else {
+
+    ObjectData *obj_data = object_data(id);
+    if (obj_data) {
+      if (obj_data->has_data(key)) {
+        ret = obj_data->get_data(key);
+      }
+      else if (key == HdLightTokens->exposure) {
+        // TODO: temporary value, it should be delivered through Python UI
+        ret = 1.0f;
+      }
     }
   }
   return ret;

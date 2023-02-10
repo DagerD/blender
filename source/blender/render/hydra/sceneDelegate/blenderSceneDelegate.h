@@ -15,6 +15,7 @@
 #include "RNA_blender_cpp.h"
 
 #include "object.h"
+#include "world.h"
 
 using namespace pxr;
 
@@ -49,6 +50,8 @@ private:
   void update_material(Material *material);
   void update_collection();
   void update_visibility();
+  void add_world(View3DShading &view3DShading, World &world);
+  SdfPath world_id(View3DShading *view3DShading);
 
 private:  
   BL::Depsgraph *b_depsgraph;
@@ -56,6 +59,7 @@ private:
   bool is_populated;
   ObjectDataMap objects;
   MaterialDataMap materials;
+  WorldData world_data;
 };
 
 } // namespace blender::render::hydra
