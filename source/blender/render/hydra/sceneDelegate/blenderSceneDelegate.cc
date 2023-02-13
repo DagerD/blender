@@ -50,14 +50,14 @@ void BlenderSceneDelegate::update_material(Material *material)
   }
 }
 
-void BlenderSceneDelegate::add_world(View3DShading &view3DShading, World &world)
+void BlenderSceneDelegate::add_world(View3DShading *view3DShading, World *world)
 {
-  SdfPath world_light_id = world_id(&view3DShading);
+  SdfPath world_light_id = world_id(view3DShading);
 
   LOG(INFO) << "Add world: " << world_light_id;
 
-  if (world_data.shading != &view3DShading || world_data.world != &world) {
-    world_data = WorldData(&view3DShading, &world);
+  if (world_data.shading != view3DShading || world_data.world != world) {
+    world_data = WorldData(view3DShading, world);
     GetRenderIndex().InsertSprim(HdPrimTypeTokens->domeLight, this, world_light_id);
   }
   else {
@@ -262,7 +262,7 @@ void BlenderSceneDelegate::Populate(BL::Depsgraph &b_deps, View3D *v3d)
 
     World *world = (World *)b_depsgraph->scene().world().ptr.data;
 
-    add_world(view3d->shading, *world);
+    add_world(&view3d->shading, world);
 
     is_populated = true;
     return;
@@ -315,13 +315,13 @@ void BlenderSceneDelegate::Populate(BL::Depsgraph &b_deps, View3D *v3d)
 
     if (id.is_a(&RNA_World)) {
       World *world = (World *)b_depsgraph->scene().world().ptr.data;
-      add_world(view3d->shading, *world);
+      add_world(&view3d->shading, world);
       continue;
     }
 
     if (id.is_a(&RNA_ShaderNodeTree)) {
       World *world = (World *)b_depsgraph->scene().world().ptr.data;
-      add_world(view3d->shading, *world);
+      add_world(&view3d->shading, world);
       continue;
     }
   }

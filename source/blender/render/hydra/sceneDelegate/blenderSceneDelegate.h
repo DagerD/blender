@@ -50,7 +50,7 @@ private:
   void update_material(Material *material);
   void update_collection();
   void update_visibility();
-  void add_world(View3DShading &view3DShading, World &world);
+  void add_world(View3DShading *view3DShading, World *world);
   SdfPath world_id(View3DShading *view3DShading);
 
 private:  
