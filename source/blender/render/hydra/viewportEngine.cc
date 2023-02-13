@@ -545,7 +545,7 @@ void ViewportEngine::sync(BL::Depsgraph &b_depsgraph, BL::Context &b_context, px
       SdfPath::AbsoluteRootPath().AppendElementString("scene"));
   }
   View3D *view3d = (View3D *)b_context.space_data().ptr.data;
-  sceneDelegate->Populate(b_depsgraph, view3d);
+  sceneDelegate->Populate(b_depsgraph, b_context);
 
   for (auto const& setting : renderSettings) {
     renderDelegate->SetRenderSetting(setting.first, setting.second);

@@ -26,7 +26,7 @@ public:
   BlenderSceneDelegate(HdRenderIndex* renderIndex, SdfPath const &delegateId);
   ~BlenderSceneDelegate() override = default;
 
-  void Populate(BL::Depsgraph &b_deps, View3D *v3d = nullptr);
+  void Populate(BL::Depsgraph &b_deps, BL::Context &b_context);
 
   // delegate methods
   HdMeshTopology GetMeshTopology(SdfPath const& id) override;
@@ -55,6 +55,7 @@ private:
 
 private:  
   BL::Depsgraph *b_depsgraph;
+  BL::Context *b_context;
   View3D *view3d;
   bool is_populated;
   ObjectDataMap objects;

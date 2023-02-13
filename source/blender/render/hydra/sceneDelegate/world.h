@@ -13,13 +13,14 @@
 
 #include "DNA_view3d_types.h"
 #include "DNA_world_types.h"
+#include "RNA_blender_cpp.h"
 
 namespace blender::render::hydra {
 
 class WorldData {
 public:
   WorldData();
-  WorldData(View3DShading *shading, World *world);
+  WorldData(View3DShading *shading, World *world, BL::Context *b_context);
 
   std::string name();
   int type();
@@ -34,6 +35,7 @@ public:
 
   View3DShading *shading;
   World *world;
+  BL::Context *b_context;
 
  private:
   

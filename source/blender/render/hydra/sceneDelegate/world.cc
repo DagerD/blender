@@ -8,9 +8,12 @@
 #include <pxr/usd/usdLux/tokens.h>
 
 #include "DNA_node_types.h"
+#include "DNA_windowmanager_types.h"
+#include "BKE_context.h"
 #include "BKE_node.h"
 #include "BKE_node_runtime.hh"
 #include "BKE_image.h"
+#include "BKE_image_save.h"
 #include "NOD_shader.h"
 #include "BLI_path_util.h"
 
@@ -29,9 +32,10 @@ WorldData::WorldData()
 {
 }
 
-WorldData::WorldData(View3DShading *shading, World *world)
+WorldData::WorldData(View3DShading *shading, World *world, BL::Context *b_context)
   : shading(shading),
-    world(world)
+    world(world),
+    b_context(b_context)
 {
   set_as_world();
 }
@@ -95,13 +99,28 @@ void WorldData::set_as_world()
     if (!color_input.directly_linked_links().is_empty()) {
       bNode *color_input_node = color_input.directly_linked_links()[0]->fromnode;
       if (color_input_node->type == SH_NODE_TEX_IMAGE) {
-        data[HdLightTokens->textureFile] = SdfAssetPath(
-            "C:\\Users\\user\\Desktop\\WUH6nAqWDDk.jpg",
-            "C:\\Users\\user\\Desktop\\WUH6nAqWDDk.jpg");  // get_image_filepath(color_input_node);
+        NodeTexImage *tex = static_cast<NodeTexImage *>(color_input_node->storage);
+        Image *ima = (Image *)color_input_node->id;
+        ReportList reports;
+        ImageSaveOptions opts;
+        Main *bmain = CTX_data_main((bContext *)b_context->ptr.data);
+        if (BKE_image_save_options_init(&opts,
+                                        bmain,
+                                        (Scene *)b_context->scene().ptr.data,
+                                        ima,
+                                        &tex->iuser,
+                                        true,
+                                        false)) {
+          STRNCPY(opts.filepath, "C:\\Users\\user\\Downloads\\test\\123_false.png");
+          opts.im_format.imtype = R_IMF_IMTYPE_TIFF;
+          BKE_image_save(&reports, bmain, ima, &tex->iuser, &opts);
+
+          data[HdLightTokens->textureFile] = SdfAssetPath(
+              "C:\\Users\\user\\Desktop\\WUH6nAqWDDk.jpg",
+              "C:\\Users\\user\\Desktop\\WUH6nAqWDDk.jpg");
+        }
       }
     }
-
-    //blender::Span<bNode *> world_nodes = world->nodetree->nodes_by_type("ShaderNodeOutputWorld");
   }
   else {
     data[HdLightTokens->intensity] = 1.0f;
@@ -124,39 +143,4 @@ void WorldData::set_as_shading()
       shading->single_color[2]
   );
 }
-
-string WorldData::get_image_filepath(const bNode *tex_node)
-{
-  if (!tex_node) {
-    return "";
-  }
-  Image *tex_image = reinterpret_cast<Image *>(tex_node->id);
-  if (!tex_image || !BKE_image_has_filepath(tex_image)) {
-    return "";
-  }
-
-  if (BKE_image_has_packedfile(tex_image)) {
-    /* Put image in the same directory as the .MTL file. */
-    const char *filename = BLI_path_slash_rfind(tex_image->filepath) + 1;
-    fprintf(stderr,
-            "Packed image found:'%s'. Unpack and place the image in the same "
-            "directory as the .MTL file.\n",
-            filename);
-    return filename;
-  }
-
-  char path[FILE_MAX];
-  BLI_strncpy(path, tex_image->filepath, FILE_MAX);
-
-  if (tex_image->source == IMA_SRC_SEQUENCE) {
-    char head[FILE_MAX], tail[FILE_MAX];
-    ushort numlen;
-    int framenr = static_cast<NodeTexImage *>(tex_node->storage)->iuser.framenr;
-    BLI_path_sequence_decode(path, head, tail, &numlen);
-    BLI_path_sequence_encode(path, head, tail, numlen, framenr);
-  }
-
-  return path;
-};
-
 }  // namespace blender::render::hydra
