@@ -56,7 +56,8 @@ void BlenderSceneDelegate::add_world(View3DShading *view3DShading, World *world)
 
   LOG(INFO) << "Add world: " << world_light_id;
 
-  if (world_data.shading != view3DShading || world_data.world != world) {
+  if (world_data.shading != view3DShading || world_data.world != world ||
+      world_data.b_context != b_context) {
     world_data = WorldData(view3DShading, world, b_context);
     GetRenderIndex().InsertSprim(HdPrimTypeTokens->domeLight, this, world_light_id);
   }
@@ -253,7 +254,7 @@ void BlenderSceneDelegate::Populate(BL::Depsgraph &b_deps, BL::Context &b_cont)
 {
   LOG(INFO) << "Populate " << is_populated;
 
-  view3d = (View3D *)b_cont.space_data().ptr.data;;
+  view3d = (View3D *)b_cont.space_data().ptr.data;
   b_depsgraph = &b_deps;
   b_context = &b_cont;
 
