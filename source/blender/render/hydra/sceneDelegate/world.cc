@@ -100,17 +100,18 @@ void WorldData::set_as_world()
     data[HdLightTokens->intensity] = strength[1];
     data[HdLightTokens->exposure] = 1.0f;
     data[HdLightTokens->color] = GfVec3f(color[0], color[1], color[2]);
-    PyGILState_STATE gilstate;
-    gilstate = PyGILState_Ensure();
+
     if (!color_input.directly_linked_links().is_empty()) {
       bNode *color_input_node = color_input.directly_linked_links()[0]->fromnode;
       if (color_input_node->type == SH_NODE_TEX_IMAGE) {
         NodeTexImage *tex = static_cast<NodeTexImage *>(color_input_node->storage);
         Image *ima = (Image *)color_input_node->id;
+
         if (ima) {
           ReportList reports;
           ImageSaveOptions opts;
           Main *bmain = CTX_data_main((bContext *)b_context->ptr.data);
+
           if (BKE_image_save_options_init(&opts,
                                           bmain,
                                           CTX_data_scene((bContext *)b_context->ptr.data),
@@ -122,7 +123,7 @@ void WorldData::set_as_world()
             string image_name;
 
             if (ima->source == IMA_SRC_GENERATED) {
-              image_name = strcat((ima->id.name + 2), ".png");
+              image_name.append(ima->id.name + 2).append(".png");
             }
             else {
               image_name = ima->filepath == NULL ?
@@ -136,7 +137,8 @@ void WorldData::set_as_world()
                           image_name.c_str());
             STRNCPY(opts.filepath, tempfile);
             opts.im_format.imtype = R_IMF_IMTYPE_PNG;
-
+            opts.save_copy = true;
+            
             if (BKE_image_save(&reports, bmain, ima, &tex->iuser, &opts)) {
               data[HdLightTokens->textureFile] = SdfAssetPath(tempfile, tempfile);
             }
@@ -145,7 +147,6 @@ void WorldData::set_as_world()
         }
       }
     }
-    PyGILState_Release(gilstate);
   }
   else {
     data[HdLightTokens->intensity] = 1.0f;
