@@ -31,6 +31,8 @@ std::string MaterialData::name()
 
 void MaterialData::export_mtlx()
 {
+  /* Call of python function hydra.export_mtlx() */
+
   PyObject *module, *dict, *func, *result;
 
   PyGILState_STATE gstate;

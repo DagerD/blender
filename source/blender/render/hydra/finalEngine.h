@@ -16,7 +16,7 @@ public:
   virtual void render(BL::Depsgraph &b_depsgraph);
 
 protected:
-  void getResolution(BL::RenderSettings b_render, int &width, int &height);
+  pxr::GfVec2i get_resolution(BL::RenderSettings b_render);
   void updateRenderResult(std::map<std::string, std::vector<float>> &render_images, const std::string &layerName, int width, int height);
   void notifyStatus(float progress, const std::string &title, const std::string &info);
 

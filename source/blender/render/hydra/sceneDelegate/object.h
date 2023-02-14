@@ -55,7 +55,6 @@ public:
   void set_as_meshable();
   void set_mesh(Mesh *mesh);
   void set_as_light();
-  void set_as_camera();
 };
 
 using ObjectDataMap = std::map<pxr::SdfPath, ObjectData>;

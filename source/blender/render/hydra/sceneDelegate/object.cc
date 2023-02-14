@@ -4,10 +4,13 @@
 #include <pxr/base/vt/array.h>
 #include <pxr/base/gf/vec2f.h>
 #include <pxr/imaging/hd/light.h>
+#include <pxr/imaging/hd/camera.h>
 #include <pxr/imaging/hd/tokens.h>
 #include <pxr/usd/usdLux/tokens.h>
 
 #include "DNA_light_types.h"
+#include "DNA_camera_types.h"
+
 #include "BKE_object.h"
 #include "BKE_lib_id.h"
 #include "BKE_material.h"
@@ -17,6 +20,7 @@
 #include "BKE_layer.h"
 
 #include "object.h"
+#include "../utils.h"
 
 PXR_NAMESPACE_OPEN_SCOPE
 TF_DEFINE_PUBLIC_TOKENS(HdBlenderTokens, HD_BLENDER_TOKENS);
@@ -58,10 +62,6 @@ ObjectData::ObjectData(Object *object)
       set_as_light();
       break;
 
-    case OB_CAMERA:
-      set_as_camera();
-      break;
-
     default:
       break;
   }
@@ -81,7 +81,7 @@ int ObjectData::type()
 
 TfToken ObjectData::prim_type()
 {
-  TfToken ret;
+  TfToken ret = HdBlenderTokens->empty;
   Light *light;
   switch (object->type) {
     case OB_MESH:
@@ -90,6 +90,9 @@ TfToken ObjectData::prim_type()
     case OB_CURVES:
     case OB_CURVES_LEGACY:
     case OB_MBALL:
+      if (!has_data(HdTokens->points)) {
+        break;
+      }
       ret = HdPrimTypeTokens->mesh;
       break;
 
@@ -127,16 +130,8 @@ TfToken ObjectData::prim_type()
       }
       break;
 
-    case OB_CAMERA:
-      ret = HdPrimTypeTokens->camera;
-      break;
-
     default:
       break;
-  }
-
-  if (ret == HdPrimTypeTokens->mesh && !has_data(HdTokens->points)) {
-    ret = HdBlenderTokens->empty;
   }
 
   return ret;
@@ -144,12 +139,7 @@ TfToken ObjectData::prim_type()
 
 GfMatrix4d ObjectData::transform()
 {
-  float *m = (float *)object->object_to_world;
-  return GfMatrix4d(
-    m[0], m[1], m[2], m[3],
-    m[4], m[5], m[6], m[7],
-    m[8], m[9], m[10], m[11],
-    m[12], m[13], m[14], m[15]);
+  return gf_matrix_from_transform(object->object_to_world);
 }
 
 Material *ObjectData::material()
@@ -317,10 +307,6 @@ void ObjectData::set_as_light()
     default:
       break;
   }
-}
-
-void ObjectData::set_as_camera()
-{
 }
 
 }  // namespace blender::render::hydra
