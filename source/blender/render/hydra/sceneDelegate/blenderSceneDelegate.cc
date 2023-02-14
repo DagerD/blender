@@ -54,7 +54,7 @@ void BlenderSceneDelegate::update_material(Material *material)
 
 void BlenderSceneDelegate::add_world(View3DShading *view3DShading, World *world)
 {
-  SdfPath world_light_id = world_id(view3DShading);
+  SdfPath world_light_id = world_id(b_context);
 
   LOG(INFO) << "Add world: " << world_light_id;
 
@@ -232,12 +232,12 @@ SdfPath BlenderSceneDelegate::material_id(Material *material)
   return GetDelegateID().AppendElementString(str);
 }
 
-SdfPath BlenderSceneDelegate::world_id(View3DShading *view3DShading)
+SdfPath BlenderSceneDelegate::world_id(BL::Context *b_context)
 {
   /* Making id of material in form like M_<pointer in 16 hex digits format>. Example:
    * W_000002074e812088 */
   char str[32];
-  snprintf(str, 32, "W_%016llx", (uint64_t)view3DShading);
+  snprintf(str, 32, "W_%016llx", (uint64_t)b_context);
   return GetDelegateID().AppendElementString(str);
 }
 
@@ -265,7 +265,6 @@ void BlenderSceneDelegate::Populate(BL::Depsgraph &b_deps, BL::Context &b_cont)
     update_collection();
 
     World *world = (World *)b_depsgraph->scene().world().ptr.data;
-
     add_world(&view3d->shading, world);
 
     is_populated = true;

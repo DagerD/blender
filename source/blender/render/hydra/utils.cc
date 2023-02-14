@@ -81,5 +81,6 @@ string cache_image(Main *bmain,
 
   BKE_image_save_options_free(opts);
   return "";
-}  
+}
+
 }  // namespace blender::render::hydra

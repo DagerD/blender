@@ -43,15 +43,15 @@ private:
   MaterialData *material_data(SdfPath const &id);
   SdfPath object_id(Object *object);
   SdfPath material_id(Material *material);
+  SdfPath world_id(BL::Context *b_context);
   bool supported_object(Object *object);
 
   void add_update_object(Object *object, bool geometry, bool transform, bool shading);
   void set_material(ObjectData &obj_data);
   void update_material(Material *material);
+  void add_world(View3DShading *view3DShading, World *world);
   void update_collection();
   void update_visibility();
-  void add_world(View3DShading *view3DShading, World *world);
-  SdfPath world_id(View3DShading *view3DShading);
 
 private:  
   BL::Depsgraph *b_depsgraph;

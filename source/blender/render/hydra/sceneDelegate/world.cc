@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: Apache-2.0
  * Copyright 2011-2022 Blender Foundation */
 
-
 #include <filesystem>
 
 #include <pxr/base/vt/array.h>
@@ -95,6 +94,10 @@ void WorldData::set_as_world()
     bNode *output_node = ntreeShaderOutputNode(world->nodetree, SHD_OUTPUT_ALL);
     bNodeSocket input_socket = output_node->input_by_identifier("Surface");
     bNodeLink const *link = input_socket.directly_linked_links()[0];
+    if (!link) {
+      return;
+    }
+
     bNode *input_node = link->fromnode;
 
     bNodeSocket color_input = input_node->input_by_identifier("Color");
@@ -149,4 +152,5 @@ void WorldData::set_as_shading()
       shading->single_color[2]
   );
 }
+
 }  // namespace blender::render::hydra
