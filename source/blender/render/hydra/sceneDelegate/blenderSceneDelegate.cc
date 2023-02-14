@@ -3,8 +3,10 @@
 
 #include <pxr/imaging/hd/light.h>
 #include <pxr/imaging/hd/material.h>
+#include <pxr/imaging/hd/renderDelegate.h>
 #include <pxr/usd/usdLux/tokens.h>
 #include <pxr/imaging/hdSt/tokens.h>
+#include <pxr/base/gf/rotation.h>
 
 #include "glog/logging.h"
 
@@ -449,7 +451,15 @@ GfMatrix4d BlenderSceneDelegate::GetTransform(SdfPath const& id)
   HdRenderIndex &index = GetRenderIndex();
 
   if (index.GetSprim(HdPrimTypeTokens->domeLight, id)) {
-    return GfMatrix4d().SetIdentity();
+    GfMatrix4d transform = world_data.transform();
+    if (world_data.has_data(UsdLuxTokens->orientToStageUpAxis)) {
+      transform *= GfMatrix4d(GfRotation(GfVec3d(1.0, 0.0, 0.0), -90), GfVec3d());
+    }
+    if (index.GetRenderDelegate()->GetRendererDisplayName() == "RPR") {
+      transform *= GfMatrix4d(GfRotation(GfVec3d(1.0, 0.0, 0.0), -180), GfVec3d());
+      transform *= GfMatrix4d(GfRotation(GfVec3d(0.0, 0.0, 1.0), 90.0), GfVec3d());
+    }
+    return transform;
   }
 
   return objects[id].transform();

@@ -33,17 +33,15 @@ public:
   bool has_data(pxr::TfToken const &key);
   void update_world();
 
+  BL::Context *b_context;
   View3DShading *shading;
   World *world;
-  BL::Context *b_context;
-
- private:
   
+ private:
   std::map<pxr::TfToken, pxr::VtValue> data;
 
   void set_as_world();
   void set_as_shading();
-  std::string get_image_filepath(const bNode *tex_node);
 };
 
 template<class T>

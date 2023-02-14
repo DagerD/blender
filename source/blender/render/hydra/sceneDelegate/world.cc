@@ -17,12 +17,10 @@
 #include "BKE_node.h"
 #include "BKE_node_runtime.hh"
 #include "BKE_image.h"
-#include "BKE_image_save.h"
-#include "BKE_appdir.h"
 #include "NOD_shader.h"
-#include "BLI_path_util.h"
 
 #include "world.h"
+#include "../utils.h"
 
 /* TODO : add custom tftoken "transparency"? */
 
@@ -32,15 +30,16 @@ using namespace std;
 namespace blender::render::hydra {
 
 WorldData::WorldData()
-  : shading(nullptr),
-    world(nullptr)
+  : b_context(nullptr),
+    shading(nullptr),
+    world(nullptr)    
 {
 }
 
 WorldData::WorldData(View3DShading *shading, World *world, BL::Context *b_context)
-  : shading(shading),
-    world(world),
-    b_context(b_context)
+  : b_context(b_context),
+    shading(shading),
+    world(world)    
 {
   set_as_world();
 }
@@ -63,7 +62,7 @@ TfToken WorldData::prim_type()
 
 GfMatrix4d WorldData::transform()
 {
-  return GfMatrix4d();
+  return GfMatrix4d().SetIdentity();
 }
 
 VtValue &WorldData::get_data(TfToken const &key)
@@ -85,8 +84,9 @@ void WorldData::set_as_world()
 {
   data.clear();
 
-  if (world->use_nodes) {
+  data[UsdLuxTokens->orientToStageUpAxis] = true;
 
+  if (world->use_nodes) {
     bNode *output_node = ntreeShaderOutputNode(world->nodetree, SHD_OUTPUT_ALL);
     bNodeSocket input_socket = output_node->input_by_identifier("Surface");
     bNodeLink const *link = input_socket.directly_linked_links()[0];
@@ -105,44 +105,19 @@ void WorldData::set_as_world()
       bNode *color_input_node = color_input.directly_linked_links()[0]->fromnode;
       if (color_input_node->type == SH_NODE_TEX_IMAGE) {
         NodeTexImage *tex = static_cast<NodeTexImage *>(color_input_node->storage);
-        Image *ima = (Image *)color_input_node->id;
+        Image *image = (Image *)color_input_node->id;
 
-        if (ima) {
+        if (image) {
+          Main *bmain = CTX_data_main((bContext *)b_context->ptr.data);
+          Scene *scene = CTX_data_scene((bContext *)b_context->ptr.data);
+
           ReportList reports;
           ImageSaveOptions opts;
-          Main *bmain = CTX_data_main((bContext *)b_context->ptr.data);
+          opts.im_format.imtype = R_IMF_IMTYPE_PNG;
 
-          if (BKE_image_save_options_init(&opts,
-                                          bmain,
-                                          CTX_data_scene((bContext *)b_context->ptr.data),
-                                          ima,
-                                          &tex->iuser,
-                                          false,
-                                          false)) {
-            char tempfile[FILE_MAX];
-            string image_name;
-
-            if (ima->source == IMA_SRC_GENERATED) {
-              image_name.append(ima->id.name + 2).append(".png");
-            }
-            else {
-              image_name = ima->filepath == NULL ?
-                                std::filesystem::path(ima->filepath).filename().string() :
-                                ima->id.name + 2;
-            }
-
-            BLI_path_join(tempfile,
-                          sizeof(tempfile),
-                          BKE_tempdir_session(),
-                          image_name.c_str());
-            STRNCPY(opts.filepath, tempfile);
-            opts.im_format.imtype = R_IMF_IMTYPE_PNG;
-            opts.save_copy = true;
-            
-            if (BKE_image_save(&reports, bmain, ima, &tex->iuser, &opts)) {
-              data[HdLightTokens->textureFile] = SdfAssetPath(tempfile, tempfile);
-            }
-            BKE_image_save_options_free(&opts);
+          string cached_image_path = cache_image(bmain, scene, image, &tex->iuser, &opts, &reports);
+          if (!cached_image_path.empty()) {
+            data[HdLightTokens->textureFile] = SdfAssetPath(cached_image_path, cached_image_path);
           }
         }
       }
