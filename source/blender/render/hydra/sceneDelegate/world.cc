@@ -80,6 +80,11 @@ void WorldData::update_world()
   set_as_world();
 }
 
+bool WorldData::is_visible()
+{
+  return true;
+}
+
 void WorldData::set_as_world()
 {
   data.clear();

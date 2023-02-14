@@ -32,6 +32,7 @@ public:
   const T &get_data(pxr::TfToken const &key);
   bool has_data(pxr::TfToken const &key);
   void update_world();
+  bool is_visible();
 
   BL::Context *b_context;
   View3DShading *shading;

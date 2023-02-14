@@ -77,7 +77,7 @@ bool BlenderSceneDelegate::GetVisible(SdfPath const &id)
   HdRenderIndex &index = GetRenderIndex();
 
   if (index.GetSprim(HdPrimTypeTokens->domeLight, id)) {
-    return true;
+    return world_data.is_visible();
   }
 
   return obj_data->is_visible();
